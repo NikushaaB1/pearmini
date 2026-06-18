@@ -20,6 +20,7 @@ const Profile = lazy(() => import('../pages/Profile'))
 const Challenges = lazy(() => import('../pages/Challenges'))
 const Shop = lazy(() => import('../pages/Shop'))
 const Polls = lazy(() => import('../pages/Polls'))
+const DailyTasks = lazy(() => import('../pages/DailyTasks'))
 
 function ProtectedRoute({ children }) {
   const user = useUserStore((s) => s.user)
@@ -74,6 +75,7 @@ export default function AppRoutes() {
             <Route path="/challenges" element={<Challenges />} />
             <Route path="/shop" element={<Shop />} />
             <Route path="/polls" element={<Polls />} />
+            <Route path="/daily-tasks" element={<DailyTasks />} />
           </Route>
 
           <Route path="/signup" element={<Navigate to="/login" replace />} />

@@ -36,6 +36,8 @@ export const useUserStore = create((set, get) => ({
   ideas: [],
   designs: [],
   challenges: [],
+  dailyTasks: [],
+  dailyTaskCompletions: [],
   billboardModelId: null,
 
   setUser: (user, role, modelId) =>
@@ -232,6 +234,9 @@ export const useUserStore = create((set, get) => ({
   syncIdeas: (remoteIdeas) => set({ ideas: remoteIdeas || [] }),
   syncDesigns: (remoteDesigns) => set({ designs: remoteDesigns || [] }),
   syncChallenges: (remoteChallenges) => set({ challenges: remoteChallenges || [] }),
+  syncDailyTasks: (remoteTasks) => set({ dailyTasks: remoteTasks || [] }),
+  syncDailyTaskCompletions: (remoteCompletions) =>
+    set({ dailyTaskCompletions: remoteCompletions || [] }),
   syncBillboardModelId: (id) => set({ billboardModelId: id }),
 
   addIdea: (idea) => set((state) => ({ ideas: [idea, ...state.ideas] })),

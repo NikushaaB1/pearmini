@@ -9,7 +9,7 @@ export default function AppLayout() {
     <div className="min-h-screen relative">
       <BrandBackground />
       <TopNav />
-      <main className="relative z-10 p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
+      <main className="relative z-10 px-4 sm:px-6 lg:px-8 pb-8 pt-2 sm:pt-4 max-w-7xl mx-auto">
         <Outlet />
       </main>
       <FloatingMusicPlayer />

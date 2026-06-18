@@ -9,6 +9,7 @@ import {
   Shield,
   LogOut,
   Upload,
+  ListChecks,
 } from 'lucide-react'
 import PearLogo from '../ui/PearLogo'
 import ModelAvatar from '../ui/ModelAvatar'
@@ -20,6 +21,7 @@ const navItems = [
   { to: '/dashboard', icon: LayoutDashboard, label: 'დაფა' },
   { to: '/leaderboard', icon: Trophy, label: 'ლიდერბორდი' },
   { to: '/announcements', icon: Megaphone, label: 'განცხადებები' },
+  { to: '/daily-tasks', icon: ListChecks, label: 'დავალებები' },
   { to: '/chat', icon: MessageCircle, label: 'ჩატი' },
 ]
 

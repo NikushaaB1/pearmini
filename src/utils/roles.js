@@ -29,3 +29,18 @@ export function normalizeRole(role, email) {
   }
   return normalized
 }
+
+/** მარიამი — პროექტის სახე; ყოველდღიური დავალებებზე ქულების მინიჭება */
+export function isProjectFace(user) {
+  if (!user) return false
+  const name = (user.displayName || user.email || '').toLowerCase()
+  return name.includes('mariam') || name.includes('მარიამ')
+}
+
+export function canCreateDailyTasks(role) {
+  return isAdminRole(role)
+}
+
+export function canAssignDailyTaskPoints(role, user) {
+  return isAdminRole(role) || isProjectFace(user)
+}

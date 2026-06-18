@@ -18,6 +18,7 @@ import { useThemeStore, applyTheme } from './store/useThemeStore'
 import { subscribeToIdeas } from './services/ideasService'
 import { subscribeToDesigns } from './services/designsService'
 import { subscribeToChallenges } from './services/challengesService'
+import { subscribeToDailyTasks, subscribeToDailyTaskCompletions } from './services/dailyTasksService'
 import { subscribeToBillboard } from './services/rewardsService'
 
 export default function App() {
@@ -115,6 +116,14 @@ export default function App() {
       useUserStore.getState().syncChallenges(remoteChallenges ?? [])
     })
 
+    const unsubDailyTasks = subscribeToDailyTasks((remoteTasks) => {
+      useUserStore.getState().syncDailyTasks(remoteTasks ?? [])
+    })
+
+    const unsubDailyCompletions = subscribeToDailyTaskCompletions((remoteCompletions) => {
+      useUserStore.getState().syncDailyTaskCompletions(remoteCompletions ?? [])
+    })
+
     const unsubBillboard = subscribeToBillboard((billboardModelId) => {
       useUserStore.getState().syncBillboardModelId(billboardModelId)
     })
@@ -128,6 +137,8 @@ export default function App() {
       unsubIdeas()
       unsubDesigns()
       unsubChallenges()
+      unsubDailyTasks()
+      unsubDailyCompletions()
       unsubBillboard()
     }
   }, [user, setUserProfiles, syncPoints, syncAnnouncements, syncActivityLog])
