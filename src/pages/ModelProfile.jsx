@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
-import { useParams, Navigate } from 'react-router-dom'
+import { useParams, Navigate, useSearchParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Camera, Palette, Star, Mail, Sparkles, Edit3 } from 'lucide-react'
+import { Camera, Palette, Star, Mail, Sparkles, Edit3, Phone, Upload, Settings } from 'lucide-react'
 import AvatarPicker from '../components/ui/AvatarPicker'
 import EditProfileModal from '../components/ui/EditProfileModal'
 import { changeModelAvatar } from '../services/avatarService'
@@ -22,6 +22,7 @@ import { isUsingLocalAuth } from '../services/authService'
 
 export default function ModelProfile() {
   const { id } = useParams()
+  const [searchParams] = useSearchParams()
   const model = useUserStore((s) => s.models.find((m) => m.id === id))
   const { role, modelId, addPoints, logActivity } = useUserStore()
   const points = useUserStore((s) => s.points[id] || 0)
@@ -37,6 +38,17 @@ export default function ModelProfile() {
 
   const isOwnProfile = modelId === id
   const canUpload = isAdminRole(role) || isOwnProfile
+  const canEdit = isOwnProfile || isAdminRole(role)
+
+  useEffect(() => {
+    const tab = searchParams.get('tab')
+    if (tab === 'upload' && canUpload) setActiveTab('upload')
+    if (tab === 'settings' && canEdit) {
+      setEditModalOpen(true)
+      setActiveTab('gallery')
+    }
+  }, [searchParams, canUpload, canEdit])
+
   useEffect(() => {
     if (!model) return
     loadImages()
@@ -92,45 +104,42 @@ export default function ModelProfile() {
   }
 
   const handleDelete = async (image) => {
-    try {
-      await deleteImageWithPermissions(image.path, image.modelId, role, modelId)
-      setUploaded((prev) => prev.filter((img) => img.id !== image.id))
-      setEdited((prev) => prev.filter((img) => img.id !== image.id))
-      const activityText = `ფოტო წაიშალა — ${model.name}`
-      if (isUsingLocalAuth()) {
-        logActivity(activityText, model.name)
-      } else {
-        await logActivityEntry(activityText, model.name)
-      }
-    } catch (error) {
-      throw error
+    await deleteImageWithPermissions(image.path, image.modelId, role, modelId)
+    setUploaded((prev) => prev.filter((img) => img.id !== image.id))
+    setEdited((prev) => prev.filter((img) => img.id !== image.id))
+    const activityText = `ფოტო წაიშალა — ${model.name}`
+    if (isUsingLocalAuth()) {
+      logActivity(activityText, model.name)
+    } else {
+      await logActivityEntry(activityText, model.name)
     }
   }
 
   if (!model) return <Navigate to="/dashboard" replace />
 
   const tabs = [
-    { id: 'gallery', label: 'გალერეა', count: uploaded.length },
-    { id: 'edited', label: 'რედაქტირებული', count: edited.length },
-    ...(canUpload ? [{ id: 'upload', label: 'ატვირთვა', count: null }] : []),
+    { id: 'gallery', label: 'გალერეა', icon: Camera, count: uploaded.length },
+    { id: 'edited', label: 'რედაქტირებული', icon: Palette, count: edited.length },
+    ...(canUpload ? [{ id: 'upload', label: 'ატვირთვა', icon: Upload, count: null }] : []),
+    ...(canEdit ? [{ id: 'settings', label: 'პროფილი', icon: Settings, count: null }] : []),
   ]
+
+  const handleTabClick = (tabId) => {
+    if (tabId === 'settings') {
+      setEditModalOpen(true)
+      return
+    }
+    setActiveTab(tabId)
+  }
 
   return (
     <PageTransition>
-      {/* Hero */}
       <motion.div
-        initial={{ opacity: 0, y: -10 }}
+        initial={{ opacity: 0, y: -8 }}
         animate={{ opacity: 1, y: 0 }}
-        className="relative rounded-3xl overflow-hidden mb-8 border glass-card"
-        style={{
-          borderColor: 'var(--border-subtle)',
-          backgroundImage: `linear-gradient(180deg, rgba(0,0,0,0.28), rgba(0,0,0,0.28)), url('/pear-hero.jpg')`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          color: 'white',
-        }}
+        className="profile-hero mb-8 relative"
       >
-        <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(0,0,0,0.28), rgba(0,0,0,0.46))' }} />
+        <div className="profile-hero-glow" />
         <div className="relative p-6 sm:p-10 flex flex-col sm:flex-row items-start sm:items-center gap-6">
           <AvatarPicker
             src={model.avatar}
@@ -140,25 +149,34 @@ export default function ModelProfile() {
             editable={isOwnProfile}
             onUpload={(file) => changeModelAvatar(id, file)}
           />
-          <div className="flex-1">
-            <div className="flex items-center gap-2 text-[var(--accent)] text-xs uppercase tracking-widest mb-2">
-              <Sparkles size={12} />
-              მოდელი
+          <div className="flex-1 min-w-0">
+            <div className="page-eyebrow mb-2">
+              <Sparkles size={10} />
+              ელიტური მოდელი
             </div>
-            <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight text-[var(--text-primary)]">
+            <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-[var(--text-primary)]">
               {model.name}
             </h1>
-            <p className="text-[var(--text-muted)] mt-1">{model.tagline}</p>
-            {model.email && (
-              <p className="flex items-center gap-1.5 text-sm text-[var(--text-subtle)] mt-3">
-                <Mail size={14} />
-                {model.email}
-              </p>
-            )}
-            {isOwnProfile && (
+            <p className="text-[var(--text-muted)] mt-1.5">{model.tagline}</p>
+            <div className="flex flex-wrap items-center gap-4 mt-3 text-sm text-[var(--text-subtle)]">
+              {model.email && (
+                <span className="flex items-center gap-1.5">
+                  <Mail size={14} />
+                  {model.email}
+                </span>
+              )}
+              {model.phone_number && (
+                <span className="flex items-center gap-1.5">
+                  <Phone size={14} className="text-[var(--accent)]" />
+                  {model.phone_number}
+                </span>
+              )}
+            </div>
+            {canEdit && (
               <button
                 onClick={() => setEditModalOpen(true)}
-                className="mt-4 px-4 py-2 rounded-lg bg-[var(--accent-soft)] text-[var(--accent)] hover:bg-[var(--accent)] hover:text-white transition-colors flex items-center gap-1.5 font-medium"
+                className="mt-5 inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-[var(--accent)] border transition-all hover:bg-[var(--accent-soft)]"
+                style={{ borderColor: 'rgba(196,149,106,0.35)', background: 'var(--bg-card)' }}
               >
                 <Edit3 size={16} />
                 პროფილის რედაქტირება
@@ -167,31 +185,30 @@ export default function ModelProfile() {
           </div>
           <motion.div
             key={points}
-            initial={{ scale: 1.15 }}
+            initial={{ scale: 1.1 }}
             animate={{ scale: 1 }}
-            className="flex flex-col items-center px-6 py-4 rounded-2xl"
-            style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)' }}
+            className="elite-panel px-6 py-4 flex flex-col items-center shrink-0"
           >
-            <Star className="text-[var(--accent)] mb-1" size={20} />
-            <span className="text-2xl font-semibold text-[var(--text-primary)]">{points}</span>
-            <span className="text-xs text-[var(--text-muted)]">ქულა</span>
+            <Star className="text-[var(--accent)] mb-1" size={20} fill="currentColor" />
+            <span className="text-2xl font-bold text-[var(--text-primary)]">{points}</span>
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
+              ქულა
+            </span>
           </motion.div>
         </div>
       </motion.div>
 
-      {/* Tabs */}
-      <div className="flex gap-2 mb-6 overflow-x-auto pb-1">
+      <div className="elite-tabs mb-6">
         {tabs.map((tab) => (
           <button
             key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
-              activeTab === tab.id ? 'nav-link-active' : 'text-[var(--text-muted)] hover:bg-[var(--bg-hover)]'
-            }`}
+            onClick={() => handleTabClick(tab.id)}
+            className={`elite-tab ${activeTab === tab.id ? 'elite-tab--active' : ''}`}
           >
+            <tab.icon size={15} strokeWidth={1.75} />
             {tab.label}
             {tab.count !== null && (
-              <span className="text-xs opacity-70">({tab.count})</span>
+              <span className="text-[10px] opacity-70">({tab.count})</span>
             )}
           </button>
         ))}
@@ -200,13 +217,13 @@ export default function ModelProfile() {
       <FadeInContainer>
         {activeTab === 'upload' && canUpload && (
           <FadeInItem>
-            <Card hover={false} className="mb-8">
-              <h2 className="text-lg font-semibold mb-4 flex items-center gap-2 text-[var(--text-primary)]">
+            <div className="elite-panel p-5 sm:p-6 mb-8">
+              <h2 className="text-lg font-bold mb-4 flex items-center gap-2 text-[var(--text-primary)]">
                 <Camera size={18} className="text-[var(--accent)]" />
                 ახალი ფოტოები
               </h2>
               <UploadZone onUpload={handleUpload} uploading={uploading} progress={progress} />
-            </Card>
+            </div>
           </FadeInItem>
         )}
 
@@ -219,10 +236,18 @@ export default function ModelProfile() {
                 ))}
               </div>
             ) : uploaded.length === 0 ? (
-              <Card hover={false} className="text-center py-16">
+              <div className="elite-panel p-12 text-center">
                 <Camera className="mx-auto text-[var(--text-subtle)] mb-3" size={32} />
                 <p className="text-[var(--text-muted)]">გალერეა ცარიელია</p>
-              </Card>
+                {canUpload && (
+                  <button
+                    onClick={() => setActiveTab('upload')}
+                    className="elite-chip mt-4 cursor-pointer"
+                  >
+                    ატვირთვის დაწყება
+                  </button>
+                )}
+              </div>
             ) : (
               <div className="masonry-grid">
                 {uploaded.map((img, i) => (
@@ -243,7 +268,7 @@ export default function ModelProfile() {
                       transition={{ duration: 0.4 }}
                       className="w-full rounded-xl"
                     />
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/25 transition-all flex items-end p-3 opacity-0 group-hover:opacity-100">
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all flex items-end p-3 opacity-0 group-hover:opacity-100">
                       <span className="text-white text-xs truncate">{img.name}</span>
                     </div>
                   </motion.div>
@@ -256,10 +281,10 @@ export default function ModelProfile() {
         {activeTab === 'edited' && (
           <FadeInItem>
             {edited.length === 0 && uploaded.length < 2 ? (
-              <Card hover={false} className="text-center py-16">
+              <div className="elite-panel p-12 text-center">
                 <Palette className="mx-auto text-[var(--text-subtle)] mb-3" size={32} />
                 <p className="text-[var(--text-muted)]">რედაქტირებული კონტენტი მალე გამოჩნდება</p>
-              </Card>
+              </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {(edited.length > 0
@@ -292,14 +317,11 @@ export default function ModelProfile() {
       />
 
       <AnimatePresence>
-        {editModalOpen && isOwnProfile && (
+        {editModalOpen && canEdit && (
           <EditProfileModal
             model={model}
             onClose={() => setEditModalOpen(false)}
-            onSave={() => {
-              setEditModalOpen(false)
-              loadImages()
-            }}
+            onSave={() => setEditModalOpen(false)}
           />
         )}
       </AnimatePresence>

@@ -1,11 +1,11 @@
 import { motion } from 'framer-motion'
 
 const variants = {
-  primary: 'text-white hover:opacity-90',
-  secondary: 'border hover:opacity-90',
-  ghost: 'hover:opacity-80',
-  danger: 'bg-red-500/15 text-red-500 border border-red-500/30',
-  luxury: 'bg-[#f5f0e8] text-[#1a1a1a] hover:bg-[#faf6ef]',
+  primary: 'text-[#1a1008] hover:brightness-105 shadow-[var(--shadow-gold)]',
+  secondary: 'glass-morphism border hover:border-[var(--border-medium)]',
+  ghost: 'glass hover:opacity-90',
+  danger: 'bg-red-500/15 text-red-500 border border-red-500/30 backdrop-blur-md',
+  luxury: 'glass-morphism text-[var(--text-primary)] hover:brightness-105',
 }
 
 export default function Button({
@@ -19,22 +19,31 @@ export default function Button({
 }) {
   const variantStyle =
     variant === 'primary'
-      ? { background: 'var(--accent)', ...style }
+      ? { background: 'var(--gradient-gold)', ...style }
       : variant === 'secondary'
-        ? { background: 'var(--bg-card)', borderColor: 'var(--border-subtle)', color: 'var(--text-primary)', ...style }
+        ? {
+            color: 'var(--accent-bright)',
+            ...style,
+          }
         : variant === 'ghost'
-          ? { color: 'var(--text-muted)', ...style }
+          ? {
+              background: 'var(--glass-bg-subtle)',
+              borderColor: 'var(--glass-border)',
+              color: 'var(--text-muted)',
+              backdropFilter: 'blur(16px)',
+              ...style,
+            }
           : style
 
   return (
     <motion.button
-      whileHover={!disabled && !loading ? { scale: 1.01 } : {}}
-      whileTap={!disabled && !loading ? { scale: 0.99 } : {}}
+      whileHover={!disabled && !loading ? { scale: 1.02, y: -1 } : {}}
+      whileTap={!disabled && !loading ? { scale: 0.98 } : {}}
       disabled={disabled || loading}
       style={variantStyle}
       className={`
         relative inline-flex items-center justify-center gap-2
-        px-6 py-3 rounded-full font-medium text-sm
+        px-6 py-3 rounded-full font-semibold text-sm
         transition-all duration-200
         disabled:opacity-50 disabled:cursor-not-allowed
         ${variants[variant]}

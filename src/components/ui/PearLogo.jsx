@@ -11,7 +11,12 @@ export default function PearLogo({ size = 'md', animated = false, className = ''
     >
       <span className={size === 'sm' ? 'text-lg' : 'text-2xl'}>🌸</span>
       <div className="flex flex-col">
-        <span className={`font-semibold tracking-tight ${sizes[size]}`} style={{ color: 'var(--text-primary)' }}>
+        <span className={`font-bold tracking-tight ${sizes[size]}`} style={{
+          background: 'var(--gradient-gold)',
+          WebkitBackgroundClip: 'text',
+          backgroundClip: 'text',
+          color: 'transparent',
+        }}>
           PEAR™
         </span>
         {size !== 'sm' && (

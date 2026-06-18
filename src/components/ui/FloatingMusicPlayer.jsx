@@ -102,7 +102,7 @@ export default function FloatingMusicPlayer() {
             initial={{ opacity: 0, scale: 0.9, x: -20 }}
             animate={{ opacity: 1, scale: 1, x: 0 }}
             exit={{ opacity: 0, scale: 0.9, x: -20 }}
-            className="w-72 p-4 rounded-2xl glass-card border shadow-xl flex flex-col gap-3"
+            className="w-72 p-4 rounded-2xl glass-morphism-strong border shadow-xl flex flex-col gap-3"
             style={{
               borderColor: 'var(--border-subtle)',
               background: 'var(--bg-elevated)',

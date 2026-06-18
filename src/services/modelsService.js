@@ -10,6 +10,8 @@ function rowToModel(row) {
     email: row.email,
     tagline: row.tagline || 'ელიტური მოდელი',
     avatar: row.avatar || null,
+    phone_number: row.phone_number || null,
+    kisa_id: row.kisa_id || null,
     updatedAt: row.updated_at,
   }
 }
@@ -53,23 +55,34 @@ export async function deleteModel(modelId) {
 }
 
 export async function updateModelProfile(modelId, data) {
-  if (!isConfigured || !supabase) return
+  if (!isConfigured || !supabase) {
+    useUserStore.getState().updateModel(modelId, data)
+    return
+  }
   const { error } = await supabase.from('models').update({
     ...data,
     updated_at: new Date().toISOString(),
   }).eq('id', modelId)
   if (error) throw error
+  useUserStore.getState().updateModel(modelId, data)
 }
 
 export async function updateModelPaymentInfo(modelId, phoneNumber, kisaId) {
-  if (!isConfigured || !supabase) return
-  const { error } = await supabase.from('models').update({
+  const payload = {
     phone_number: phoneNumber || null,
     kisa_id: kisaId || null,
     payment_method: { type: 'kisa_ge', phone: phoneNumber, kisa_id: kisaId },
+  }
+  if (!isConfigured || !supabase) {
+    useUserStore.getState().updateModel(modelId, payload)
+    return
+  }
+  const { error } = await supabase.from('models').update({
+    ...payload,
     updated_at: new Date().toISOString(),
   }).eq('id', modelId)
   if (error) throw error
+  useUserStore.getState().updateModel(modelId, payload)
 }
 
 /** @deprecated use deleteModel */

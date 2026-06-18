@@ -209,8 +209,7 @@ export default function Chat() {
               <p className="text-[var(--text-muted)] mt-1.5">ელეგანტური საერთო სივრცე ყველასთვის</p>
             </div>
             <div
-              className="flex items-center gap-3 px-4 py-2.5 rounded-2xl text-sm"
-              style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)' }}
+              className="flex items-center gap-3 px-4 py-2.5 rounded-2xl text-sm surface-glass"
             >
               <Users size={16} className="text-[var(--accent)]" />
               <span className="text-[var(--text-muted)]">
@@ -248,16 +247,13 @@ export default function Chat() {
           <div className="grid grid-cols-1 lg:grid-cols-10 gap-6">
             {/* Left Column: Chat Messages */}
             <div
-              className={`lg:col-span-6 rounded-3xl overflow-hidden flex flex-col shadow-2xl border ${
+              className={`lg:col-span-6 rounded-3xl overflow-hidden flex flex-col surface-glass shadow-2xl ${
                 activeTab === 'chat' ? 'flex' : 'hidden lg:flex'
               }`}
               style={{
                 height: 'calc(100vh - 12rem)',
                 minHeight: '480px',
                 maxHeight: '720px',
-                borderColor: 'var(--border-subtle)',
-                background: 'var(--bg-card)',
-                boxShadow: '0 24px 80px -24px rgba(0,0,0,0.18)',
               }}
             >
               {/* Header */}
@@ -426,12 +422,11 @@ export default function Chat() {
               {/* Input */}
               <form
                 onSubmit={handleSend}
-                className="px-4 sm:px-5 py-4 border-t"
-                style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-card)' }}
+                className="px-4 sm:px-5 py-4 border-t glass-morphism-strong"
+                style={{ borderColor: 'var(--border-subtle)' }}
               >
                 <div
-                  className="flex items-end gap-2 p-2 rounded-2xl"
-                  style={{ background: 'var(--bg-hover)', border: '1px solid var(--border-subtle)' }}
+                  className="flex items-end gap-2 p-2 rounded-2xl glass"
                 >
                   <ModelAvatar src={myAvatar} name={user?.displayName} size="sm" className="!rounded-xl ml-1 mb-1 hidden sm:flex" />
                   <textarea
@@ -468,16 +463,13 @@ export default function Chat() {
 
             {/* Right Column: Ideas Board */}
             <div
-              className={`lg:col-span-4 rounded-3xl overflow-hidden flex flex-col shadow-2xl border ${
+              className={`lg:col-span-4 rounded-3xl overflow-hidden flex flex-col surface-glass shadow-2xl ${
                 activeTab === 'ideas' ? 'flex' : 'hidden lg:flex'
               }`}
               style={{
                 height: 'calc(100vh - 12rem)',
                 minHeight: '480px',
                 maxHeight: '720px',
-                borderColor: 'var(--border-subtle)',
-                background: 'var(--bg-card)',
-                boxShadow: '0 24px 80px -24px rgba(0,0,0,0.18)',
               }}
             >
               {/* Ideas Header */}
@@ -535,7 +527,7 @@ export default function Chat() {
                         animate={{ opacity: 1, y: 0 }}
                         className="p-3.5 rounded-2xl border shadow-sm flex flex-col gap-2.5 transition-all"
                         style={{
-                          background: 'var(--bg-card-solid)',
+                          background: 'var(--bg-card)',
                           borderColor: 'var(--border-subtle)',
                         }}
                       >
@@ -599,12 +591,11 @@ export default function Chat() {
               {/* Ideas Input */}
               <form
                 onSubmit={handleSendIdea}
-                className="px-4 py-3.5 border-t"
-                style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-card)' }}
+                className="px-4 py-3.5 border-t glass-morphism-strong"
+                style={{ borderColor: 'var(--border-subtle)' }}
               >
                 <div
-                  className="flex items-center gap-2 p-2 rounded-2xl"
-                  style={{ background: 'var(--bg-hover)', border: '1px solid var(--border-subtle)' }}
+                  className="flex items-center gap-2 p-2 rounded-2xl glass"
                 >
                   <textarea
                     value={ideaText}

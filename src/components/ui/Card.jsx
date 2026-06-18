@@ -20,7 +20,7 @@ export default function Card({
       className={`
         glass-card rounded-2xl p-6
         ${hover ? 'glass-card-hover cursor-pointer' : ''}
-        ${glow ? 'ring-1 ring-[var(--accent-glow)]' : ''}
+        ${glow ? 'ring-1 ring-[var(--accent-glow)] shadow-[var(--shadow-gold)]' : ''}
         ${onClick ? 'cursor-pointer' : ''}
         ${className}
       `}

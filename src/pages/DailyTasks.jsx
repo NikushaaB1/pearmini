@@ -188,7 +188,7 @@ export default function DailyTasks() {
                 type="date"
                 value={filterDate}
                 onChange={(e) => setFilterDate(e.target.value)}
-                className="px-3 py-2 rounded-xl text-sm border bg-[var(--bg-card)] text-[var(--text-primary)]"
+                className="px-3 py-2 rounded-xl text-sm border glass text-[var(--text-primary)]"
                 style={{ borderColor: 'var(--border-subtle)' }}
               />
             </div>
@@ -228,7 +228,7 @@ export default function DailyTasks() {
                       value={title}
                       onChange={(e) => setTitle(e.target.value)}
                       placeholder="მაგ: Instagram Story გამოქვეყნება"
-                      className="w-full px-3 py-2.5 rounded-xl text-sm border bg-[var(--bg-card)] text-[var(--text-primary)]"
+                      className="w-full px-3 py-2.5 rounded-xl text-sm border glass text-[var(--text-primary)]"
                       style={{ borderColor: 'var(--border-subtle)' }}
                     />
                   </div>
@@ -241,7 +241,7 @@ export default function DailyTasks() {
                         setTaskDate(e.target.value)
                         setFilterDate(e.target.value)
                       }}
-                      className="w-full px-3 py-2.5 rounded-xl text-sm border bg-[var(--bg-card)] text-[var(--text-primary)]"
+                      className="w-full px-3 py-2.5 rounded-xl text-sm border glass text-[var(--text-primary)]"
                       style={{ borderColor: 'var(--border-subtle)' }}
                     />
                   </div>
@@ -254,7 +254,7 @@ export default function DailyTasks() {
                     onChange={(e) => setDescription(e.target.value)}
                     rows={2}
                     placeholder="დავალების დეტალები..."
-                    className="w-full px-3 py-2.5 rounded-xl text-sm border bg-[var(--bg-card)] text-[var(--text-primary)] resize-none"
+                    className="w-full px-3 py-2.5 rounded-xl text-sm border glass text-[var(--text-primary)] resize-none"
                     style={{ borderColor: 'var(--border-subtle)' }}
                   />
                 </div>
@@ -267,7 +267,7 @@ export default function DailyTasks() {
                       min="0"
                       value={pointsReward}
                       onChange={(e) => setPointsReward(e.target.value)}
-                      className="w-24 px-3 py-2.5 rounded-xl text-sm border bg-[var(--bg-card)] text-[var(--text-primary)]"
+                      className="w-24 px-3 py-2.5 rounded-xl text-sm border glass text-[var(--text-primary)]"
                       style={{ borderColor: 'var(--border-subtle)' }}
                     />
                   </div>
@@ -282,7 +282,7 @@ export default function DailyTasks() {
                       value={socialLink}
                       onChange={(e) => setSocialLink(e.target.value)}
                       placeholder="https://instagram.com/pear..."
-                      className="w-full px-3 py-2.5 rounded-xl text-sm border bg-[var(--bg-card)] text-[var(--text-primary)]"
+                      className="w-full px-3 py-2.5 rounded-xl text-sm border glass text-[var(--text-primary)]"
                       style={{ borderColor: 'var(--border-subtle)' }}
                     />
                     <p className="text-[10px] text-[var(--text-muted)] mt-1">
@@ -326,8 +326,7 @@ export default function DailyTasks() {
                   <motion.div
                     key={task.id}
                     layout
-                    className="rounded-2xl border overflow-hidden"
-                    style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-card-solid)' }}
+                    className="rounded-2xl overflow-hidden surface-glass"
                   >
                     <div className="p-5">
                       <div className="flex items-start justify-between gap-4">
@@ -417,8 +416,7 @@ export default function DailyTasks() {
                                 key={c.id}
                                 initial={{ opacity: 0, y: 4 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                className="flex flex-col sm:flex-row sm:items-center gap-3 p-3 rounded-xl border"
-                                style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-card)' }}
+                                className="flex flex-col sm:flex-row sm:items-center gap-3 p-3 rounded-xl surface-glass"
                               >
                                 <div className="flex items-center gap-3 flex-1 min-w-0">
                                   <ModelAvatar
@@ -449,7 +447,7 @@ export default function DailyTasks() {
                                         [c.id]: e.target.value,
                                       }))
                                     }
-                                    className="w-16 px-2 py-1.5 rounded-lg text-sm border text-center bg-[var(--bg-card)] text-[var(--text-primary)]"
+                                    className="w-16 px-2 py-1.5 rounded-lg text-sm border text-center glass text-[var(--text-primary)]"
                                     style={{ borderColor: 'var(--border-subtle)' }}
                                   />
                                   <Button

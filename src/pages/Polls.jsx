@@ -61,8 +61,7 @@ function ModelPollCard({ model, ideas, designs, votes, uid, onVote }) {
   return (
     <motion.div
       layout
-      className="rounded-2xl border overflow-hidden"
-      style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-card-solid)' }}
+      className="rounded-2xl overflow-hidden surface-glass"
     >
       {/* Card header — always visible */}
       <button
@@ -177,8 +176,7 @@ function ModelPollCard({ model, ideas, designs, votes, uid, onVote }) {
                       return (
                         <div
                           key={design.id}
-                          className="rounded-xl overflow-hidden border flex flex-col"
-                          style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-card-solid)' }}
+                          className="rounded-xl overflow-hidden flex flex-col surface-glass"
                         >
                           <div className="aspect-video relative overflow-hidden">
                             <img
@@ -294,7 +292,7 @@ function IdeasPollSection({ ideas, models, votes, uid, onIdeaVote }) {
                 }`}
                 style={{
                   borderColor: isVoted ? 'var(--accent)' : 'var(--border-subtle)',
-                  background: isVoted ? 'var(--accent-soft)' : 'var(--bg-card-solid)',
+                  background: isVoted ? 'var(--accent-soft)' : 'var(--bg-card)',
                 }}
               >
                 <div className="flex items-start gap-3">
@@ -539,8 +537,7 @@ export default function Polls() {
               {/* Right: models leaderboard for Ideas Poll */}
               <div>
                 <div
-                  className="rounded-2xl border p-4"
-                  style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-card-solid)' }}
+                  className="rounded-2xl p-4 surface-glass"
                 >
                   <h3 className="text-sm font-bold text-[var(--text-primary)] mb-3 flex items-center gap-2">
                     <BarChart2 size={15} className="text-[var(--accent)]" />
@@ -619,8 +616,7 @@ export default function Polls() {
                   ideas.some((i) => i.senderName === m.name || i.senderUid === m.uid)
                 ).length > 0 && (
                   <div
-                    className="mt-4 rounded-2xl border p-4"
-                    style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-card-solid)' }}
+                    className="mt-4 rounded-2xl p-4 surface-glass"
                   >
                     <h3 className="text-xs font-bold text-[var(--text-muted)] mb-3 uppercase tracking-widest flex items-center gap-2">
                       <Users size={12} />

@@ -28,7 +28,7 @@ import EditChallengeModal from '../components/ui/EditChallengeModal'
 import { useUserStore } from '../store/useUserStore'
 
 import { getModelImages, downloadBulk } from '../services/storage'
-import { getCVSubmissions } from '../services/cvService'
+import { getCVSubmissions, fetchCVSubmissions, downloadCV, openCV } from '../services/cvService'
 
 import { deleteModelFromFirestore, saveModel } from '../services/modelsService'
 import { deleteAccount } from '../services/usersService'
@@ -114,7 +114,7 @@ export default function Admin() {
   }, [])
 
   useEffect(() => {
-    setCvList(getCVSubmissions())
+    fetchCVSubmissions().then(setCvList).catch(() => setCvList(getCVSubmissions()))
   }, [])
 
 
@@ -1296,23 +1296,59 @@ export default function Admin() {
         {activeTab === 'cvs' && (
           <FadeInItem>
             <Card hover={false}>
-              <h3 className="font-semibold mb-4 text-[var(--text-primary)] text-md">სატვირთო CV-ები ({cvList.length})</h3>
-              <div className="space-y-3 max-h-[520px] overflow-y-auto pr-2">
+              <h3 className="font-bold mb-1 text-[var(--text-primary)] text-lg flex items-center gap-2">
+                CV გაგზავნები
+                <span className="elite-chip">{cvList.length}</span>
+              </h3>
+              <p className="text-xs text-[var(--text-muted)] mb-5">გაგზავნილი რეზიუმეები — ნახვა და ჩამოტვირთვა</p>
+              <div className="space-y-3 max-h-[520px] overflow-y-auto pr-1">
                 {cvList.length === 0 && (
-                  <p className="text-xs text-[var(--text-muted)] text-center py-6">CV შეტყობინებები არაა</p>
+                  <div className="elite-panel p-10 text-center">
+                    <p className="text-sm text-[var(--text-muted)]">CV შეტყობინებები ჯერ არ არის</p>
+                  </div>
                 )}
                 {cvList.map((cv) => (
-                  <div key={cv.id} className="p-3 rounded-lg border flex items-center justify-between" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-hover)' }}>
-                    <div>
-                      <p className="text-sm font-semibold text-[var(--text-primary)]">{cv.name || cv.email}</p>
-                      <p className="text-[10px] text-[var(--text-muted)] mt-1">{cv.message || '(no message)'}</p>
-                      <p className="text-[10px] text-[var(--text-muted)] mt-1">{new Date(cv.created_at).toLocaleString()}</p>
+                  <div key={cv.id} className="cv-card">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-bold text-[var(--text-primary)] truncate">
+                        {cv.name || cv.email || 'ანონიმი'}
+                      </p>
+                      {cv.email && (
+                        <p className="text-[11px] text-[var(--text-muted)] mt-0.5 truncate">{cv.email}</p>
+                      )}
+                      {cv.message && (
+                        <p className="text-xs text-[var(--text-subtle)] mt-1 line-clamp-2">{cv.message}</p>
+                      )}
+                      <p className="text-[10px] text-[var(--text-subtle)] mt-1.5">
+                        {new Date(cv.created_at).toLocaleString('ka-GE')}
+                      </p>
                     </div>
-                    <div className="flex gap-2">
-                      {cv.fileUrl || cv.fileName ? (
-                        <a href={cv.fileUrl || '#'} target="_blank" rel="noreferrer" className="p-2 rounded-lg bg-white/10 text-[var(--accent)]">ჩანახვა / ჩამოტვირთვა</a>
+                    <div className="flex gap-2 shrink-0">
+                      {(cv.fileUrl || cv.file_url || cv.fileData || cv.file_data || cv.fileName) ? (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => openCV(cv) || toast.error('ფაილი ვერ გაიხსნა')}
+                            className="px-3 py-2 rounded-xl text-xs font-semibold text-[var(--accent)] border hover:bg-[var(--accent-soft)] transition-colors"
+                            style={{ borderColor: 'rgba(196,149,106,0.3)' }}
+                          >
+                            ნახვა
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              downloadCV(cv)
+                                ? toast.success('ჩამოტვირთვა დაიწყო')
+                                : toast.error('ჩამოტვირთვა ვერ მოხერხდა')
+                            }
+                            className="px-3 py-2 rounded-xl text-xs font-semibold text-white transition-colors"
+                            style={{ background: 'var(--nav-gold)' }}
+                          >
+                            ჩამოთვირთვა
+                          </button>
+                        </>
                       ) : (
-                        <span className="text-[11px] text-[var(--text-muted)]">ფაილი არ არის</span>
+                        <span className="text-[11px] text-[var(--text-muted)] px-2">ფაილი არ არის</span>
                       )}
                     </div>
                   </div>

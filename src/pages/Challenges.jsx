@@ -296,8 +296,7 @@ export default function Challenges() {
                             initial={{ opacity: 0, scale: 0.95 }}
                             animate={{ opacity: 1, scale: 1 }}
                             exit={{ opacity: 0, scale: 0.95 }}
-                            className="rounded-2xl overflow-hidden border shadow-sm flex flex-col"
-                            style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-card-solid)' }}
+                            className="rounded-2xl overflow-hidden shadow-sm flex flex-col surface-glass"
                           >
                             <div className="aspect-square relative overflow-hidden group">
                               <img src={design.imageUrl} alt={design.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />

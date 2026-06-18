@@ -122,11 +122,7 @@ export default function Shop() {
 
             {isModel && (
               <div
-                className="px-6 py-4 rounded-3xl border flex items-center gap-4 shadow-lg"
-                style={{
-                  background: 'var(--bg-card)',
-                  borderColor: 'var(--border-medium)',
-                }}
+                className="px-6 py-4 rounded-3xl flex items-center gap-4 shadow-lg surface-glass"
               >
                 <div className="w-10 h-10 rounded-2xl bg-[var(--accent-soft)] flex items-center justify-center text-[var(--accent)]">
                   <Coins size={20} />
