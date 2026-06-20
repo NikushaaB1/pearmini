@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useEffect, useMemo, useState, useRef } from 'react'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
   Users,
@@ -24,6 +24,8 @@ import ModelAvatar from '../components/ui/ModelAvatar'
 import { useUserStore } from '../store/useUserStore'
 import { isAdminRole } from '../utils/roles'
 import { getModelImages } from '../services/storage'
+import { subscribeToShineSpotlight, DEFAULT_SHINE_SPOTLIGHT } from '../services/shineSpotlightService'
+import ShineWelcomeOverlay from '../components/ui/ShineWelcomeOverlay'
 
 const quickActions = [
   { title: 'მოდელები', desc: 'პროფილები და სტატისტიკა', icon: Users, to: '/models', color: 'var(--accent)' },
@@ -36,12 +38,35 @@ const quickActions = [
 
 export default function Dashboard() {
   const navigate = useNavigate()
-  const { user, role, modelId, getLeaderboard, announcements, getModels, billboardModelId, points } =
+  const location = useLocation()
+  const { user, role, modelId, getLeaderboard, announcements, getModels, billboardModelId, points, showSplash } =
     useUserStore()
   const leaderboard = getLeaderboard()
   const models = getModels()
   const billboardModel = billboardModelId ? models.find((m) => m.id === billboardModelId) : null
   const [uploadCounts, setUploadCounts] = useState({})
+  const [spotlight, setSpotlight] = useState(DEFAULT_SHINE_SPOTLIGHT)
+  const [showAd, setShowAd] = useState(false)
+  const adHandledRef = useRef(false)
+
+  useEffect(() => {
+    return subscribeToShineSpotlight(setSpotlight)
+  }, [])
+
+  useEffect(() => {
+    const wantsAd = location.state?.showCampaignAd === true
+    if (!wantsAd || adHandledRef.current || showSplash || !spotlight.enabled) return undefined
+
+    const timer = setTimeout(() => {
+      adHandledRef.current = true
+      setShowAd(true)
+      navigate('/dashboard', { replace: true, state: {} })
+    }, 800)
+
+    return () => clearTimeout(timer)
+  }, [location.state, showSplash, spotlight.enabled, navigate])
+
+  const handleAdClose = () => setShowAd(false)
 
   const uploadsRoute = isAdminRole(role) ? '/uploads' : modelId ? `/models/${modelId}?tab=upload` : '/dashboard'
 
@@ -75,6 +100,14 @@ export default function Dashboard() {
 
   return (
     <PageTransition>
+      <ShineWelcomeOverlay
+        visible={showAd}
+        title={spotlight.title}
+        subtitle={spotlight.subtitle}
+        description={spotlight.description}
+        imageUrl={spotlight.imageUrl}
+        onClose={handleAdClose}
+      />
       <FadeInContainer>
         <FadeInItem>
           <PageHeader
@@ -199,7 +232,6 @@ export default function Dashboard() {
           </FadeInItem>
         </div>
 
-        {/* Models list with uploads */}
         <FadeInItem>
           <div className="elite-panel p-5 sm:p-6">
             <div className="flex items-center justify-between gap-4 mb-5">

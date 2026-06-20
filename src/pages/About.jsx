@@ -267,7 +267,7 @@ export default function About() {
   return (
     <div
       className="min-h-screen relative overflow-hidden"
-      style={{ background: '#080706' }}
+      style={{ background: '#0a1a0f' }}
     >
       {/* ── Background layers ── */}
       <div className="absolute inset-0 z-0">
@@ -288,7 +288,7 @@ export default function About() {
           className="absolute inset-0"
           style={{
             background:
-              'linear-gradient(180deg, rgba(8,7,6,0.3) 0%, rgba(8,7,6,0.85) 40%, rgba(8,7,6,0.97) 70%, #080706 100%)',
+              'linear-gradient(180deg, rgba(10,26,15,0.3) 0%, rgba(10,26,15,0.85) 40%, rgba(10,26,15,0.97) 70%, #0a1a0f 100%)',
           }}
         />
       </div>
@@ -303,10 +303,10 @@ export default function About() {
         transition={{ duration: 0.8, delay: 0.2 }}
         className="sticky top-0 z-50"
         style={{
-          background: 'rgba(8, 7, 6, 0.6)',
+          background: 'rgba(10, 26, 15, 0.65)',
           backdropFilter: 'blur(24px)',
           WebkitBackdropFilter: 'blur(24px)',
-          borderBottom: '1px solid rgba(245, 240, 232, 0.06)',
+          borderBottom: '1px solid rgba(212, 168, 83, 0.08)',
         }}
       >
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">

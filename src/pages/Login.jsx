@@ -24,7 +24,7 @@ export default function Login() {
       setUser(profile, profile.role, profile.modelId)
       triggerSplash()
       toast.success(`კეთილი იყოს დაბრუნება${profile.displayName ? `, ${profile.displayName}` : ''}`)
-      navigate('/dashboard')
+      navigate('/dashboard', { state: { showCampaignAd: true } })
     } catch (err) {
       const invalidCreds =
         err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password'

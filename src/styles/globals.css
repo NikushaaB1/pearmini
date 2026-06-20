@@ -5,14 +5,14 @@
   --font-display: "Noto Sans Georgian", "Inter", system-ui, sans-serif;
 }
 
-/* ── PEAR Elite — Champagne & Noir palette ── */
+/* ── PEAR Elite — Emerald & Gold palette ── */
 :root,
 [data-theme="light"] {
-  --bg-app: #f5efe6;
-  --bg-app-mesh: radial-gradient(ellipse 120% 80% at 0% -20%, rgba(212, 175, 122, 0.22) 0%, transparent 50%),
-    radial-gradient(ellipse 80% 60% at 100% 0%, rgba(232, 180, 184, 0.12) 0%, transparent 45%),
-    radial-gradient(ellipse 70% 50% at 50% 100%, rgba(201, 169, 98, 0.1) 0%, transparent 50%),
-    #f5efe6;
+  --bg-app: #e8f3ea;
+  --bg-app-mesh: radial-gradient(ellipse 120% 80% at 0% -20%, rgba(76, 140, 90, 0.22) 0%, transparent 50%),
+    radial-gradient(ellipse 80% 60% at 100% 0%, rgba(212, 175, 122, 0.12) 0%, transparent 45%),
+    radial-gradient(ellipse 70% 50% at 50% 100%, rgba(34, 85, 51, 0.1) 0%, transparent 50%),
+    #e8f3ea;
   --bg-card: var(--glass-bg);
   --bg-card-solid: #fffbf7;
   --bg-hover: rgba(255, 255, 255, 0.35);
@@ -55,11 +55,11 @@
 }
 
 [data-theme="dark"] {
-  --bg-app: #080706;
-  --bg-app-mesh: radial-gradient(ellipse 100% 70% at 20% -10%, rgba(212, 168, 83, 0.15) 0%, transparent 55%),
-    radial-gradient(ellipse 60% 50% at 90% 10%, rgba(183, 110, 121, 0.1) 0%, transparent 50%),
-    radial-gradient(ellipse 80% 40% at 50% 110%, rgba(139, 105, 20, 0.12) 0%, transparent 50%),
-    #080706;
+  --bg-app: #0a1a0f;
+  --bg-app-mesh: radial-gradient(ellipse 100% 70% at 20% -10%, rgba(34, 85, 51, 0.28) 0%, transparent 55%),
+    radial-gradient(ellipse 60% 50% at 90% 10%, rgba(212, 168, 83, 0.1) 0%, transparent 50%),
+    radial-gradient(ellipse 80% 40% at 50% 110%, rgba(20, 60, 35, 0.18) 0%, transparent 50%),
+    #0a1a0f;
   --bg-card: var(--glass-bg);
   --bg-card-solid: #161210;
   --bg-hover: rgba(255, 255, 255, 0.06);

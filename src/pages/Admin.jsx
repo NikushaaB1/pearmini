@@ -5,7 +5,7 @@ import { Navigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 
 import {
-  Shield, Plus, Minus, Download, Trash2, Pin, Megaphone, Activity, Award, Image as ImageIcon, Edit2, MessageSquare
+  Shield, Plus, Minus, Download, Trash2, Pin, Megaphone, Activity, Award, Image as ImageIcon, Edit2, MessageSquare, Sparkles
 } from 'lucide-react'
 import { createChallenge, rewardWinner, deleteChallenge, updateChallenge } from '../services/challengesService'
 import { deleteDesign } from '../services/designsService'
@@ -45,6 +45,12 @@ import AdminAccountsList from '../components/admin/AdminAccountsList'
 import CloudAuthBanner from '../components/admin/CloudAuthBanner'
 import { isAdminRole, isHeadAdmin } from '../utils/roles'
 import { isUsingLocalAuth } from '../services/authService'
+import {
+  subscribeToShineSpotlight,
+  saveShineSpotlight,
+  DEFAULT_SHINE_SPOTLIGHT,
+} from '../services/shineSpotlightService'
+import defaultBillboard from '../assets/pear-billboard.png'
 
 
 
@@ -91,6 +97,15 @@ export default function Admin() {
   const [smsHistory, setSmsHistory] = useState([])
   const [cvList, setCvList] = useState([])
 
+  const [spotlightEnabled, setSpotlightEnabled] = useState(DEFAULT_SHINE_SPOTLIGHT.enabled)
+  const [spotlightTitle, setSpotlightTitle] = useState(DEFAULT_SHINE_SPOTLIGHT.title)
+  const [spotlightSubtitle, setSpotlightSubtitle] = useState(DEFAULT_SHINE_SPOTLIGHT.subtitle)
+  const [spotlightDescription, setSpotlightDescription] = useState(DEFAULT_SHINE_SPOTLIGHT.description)
+  const [spotlightImageUrl, setSpotlightImageUrl] = useState('')
+  const [spotlightImagePreview, setSpotlightImagePreview] = useState('')
+  const [spotlightSaving, setSpotlightSaving] = useState(false)
+  const spotlightImageInputRef = useRef(null)
+
 
 
   useEffect(() => {
@@ -115,6 +130,17 @@ export default function Admin() {
 
   useEffect(() => {
     fetchCVSubmissions().then(setCvList).catch(() => setCvList(getCVSubmissions()))
+  }, [])
+
+  useEffect(() => {
+    return subscribeToShineSpotlight((config) => {
+      setSpotlightEnabled(config.enabled)
+      setSpotlightTitle(config.title)
+      setSpotlightSubtitle(config.subtitle || '')
+      setSpotlightDescription(config.description)
+      setSpotlightImageUrl(config.imageUrl || '')
+      setSpotlightImagePreview(config.imageUrl || '')
+    })
   }, [])
 
 
@@ -156,6 +182,41 @@ export default function Admin() {
         setAnnImagePreview(url)
       }
       reader.readAsDataURL(file)
+    }
+  }
+
+  const handleSpotlightImageChange = (e) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      const reader = new FileReader()
+      reader.onload = (evt) => {
+        const url = evt.target?.result
+        setSpotlightImageUrl(url)
+        setSpotlightImagePreview(url)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  const handleSaveSpotlight = async () => {
+    if (!spotlightTitle.trim()) {
+      toast.error('სათაური აუცილებელია')
+      return
+    }
+    setSpotlightSaving(true)
+    try {
+      await saveShineSpotlight({
+        enabled: spotlightEnabled,
+        title: spotlightTitle.trim(),
+        subtitle: spotlightSubtitle.trim(),
+        description: spotlightDescription.trim(),
+        imageUrl: spotlightImageUrl || null,
+      })
+      toast.success(spotlightEnabled ? 'კამპანია ჩართულია' : 'კამპანია გამორთულია')
+    } catch (err) {
+      toast.error(err.message || 'შენახვა ვერ მოხერხდა')
+    } finally {
+      setSpotlightSaving(false)
     }
   }
 
@@ -259,6 +320,8 @@ export default function Admin() {
     { id: 'users', label: 'მომხმარებლები', icon: Shield },
 
     { id: 'announcements', label: 'განცხადებები', icon: Megaphone },
+
+    { id: 'spotlight', label: 'კამპანია', icon: Sparkles },
 
     { id: 'challenges', label: 'გამოწვევები & დიზაინი', icon: Award },
 
@@ -858,6 +921,250 @@ export default function Admin() {
                     </div>
 
                   ))}
+
+                </div>
+
+              </Card>
+
+            </div>
+
+          </FadeInItem>
+
+        )}
+
+
+
+        {activeTab === 'spotlight' && (
+
+          <FadeInItem>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+              <Card hover={false}>
+
+                <h3 className="font-semibold mb-2 text-[var(--text-primary)] flex items-center gap-2">
+
+                  <Sparkles size={18} className="text-[var(--accent)]" />
+
+                  „შენი დრო დადგა“ კამპანია
+
+                </h3>
+
+                <p className="text-sm text-[var(--text-muted)] mb-6">
+
+                  login-ის შემდეგ ეკრანზე გამოჩნდება welcome popup. მომხმარებელი დააჭერს და dashboard-ზე გადავა ბანერის სექციაზე.
+
+                </p>
+
+                <div className="space-y-4">
+
+                  <label className="flex items-center justify-between gap-4 p-4 rounded-xl border cursor-pointer" style={{ borderColor: 'var(--border-subtle)' }}>
+
+                    <div>
+
+                      <p className="text-sm font-medium text-[var(--text-primary)]">კამპანიის ჩართვა</p>
+
+                      <p className="text-xs text-[var(--text-muted)] mt-0.5">გამორთვისას popup და სექცია არ ჩანს</p>
+
+                    </div>
+
+                    <button
+
+                      type="button"
+
+                      role="switch"
+
+                      aria-checked={spotlightEnabled}
+
+                      onClick={() => setSpotlightEnabled((v) => !v)}
+
+                      className="relative w-12 h-7 rounded-full transition-colors flex-shrink-0"
+
+                      style={{ background: spotlightEnabled ? 'var(--accent)' : 'var(--toggle-bg)' }}
+
+                    >
+
+                      <span
+
+                        className="absolute top-1 left-1 w-5 h-5 rounded-full transition-transform"
+
+                        style={{
+
+                          background: 'var(--toggle-knob)',
+
+                          transform: spotlightEnabled ? 'translateX(1.25rem)' : 'translateX(0)',
+
+                        }}
+
+                      />
+
+                    </button>
+
+                  </label>
+
+                  <input
+
+                    value={spotlightTitle}
+
+                    onChange={(e) => setSpotlightTitle(e.target.value)}
+
+                    placeholder="სათაური (popup)"
+
+                    className="admin-input"
+
+                  />
+
+                  <input
+
+                    value={spotlightSubtitle}
+
+                    onChange={(e) => setSpotlightSubtitle(e.target.value)}
+
+                    placeholder="ქვესათაური (popup)"
+
+                    className="admin-input"
+
+                  />
+
+                  <textarea
+
+                    value={spotlightDescription}
+
+                    onChange={(e) => setSpotlightDescription(e.target.value)}
+
+                    placeholder="სრული ტექსტი (აბზაცები ცარიელი ხაზით; დასასრული --- ხაზის შემდეგ)"
+
+                    rows={12}
+
+                    className="admin-input resize-none font-mono text-xs"
+
+                  />
+
+                  <div className="space-y-2">
+
+                    <label className="text-xs text-[var(--text-muted)] font-medium block">ფოტო (არასავალდებულო)</label>
+
+                    <input
+
+                      type="file"
+
+                      accept="image/*"
+
+                      ref={spotlightImageInputRef}
+
+                      onChange={handleSpotlightImageChange}
+
+                      className="hidden"
+
+                    />
+
+                    {spotlightImagePreview ? (
+
+                      <div className="relative rounded-lg overflow-hidden border aspect-video group" style={{ borderColor: 'var(--border-subtle)' }}>
+
+                        <img src={spotlightImagePreview} alt="Preview" className="w-full h-full object-cover" />
+
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+
+                          <Button type="button" size="xs" variant="secondary" onClick={() => spotlightImageInputRef.current?.click()}>
+
+                            შეცვლა
+
+                          </Button>
+
+                          <Button
+
+                            type="button"
+
+                            size="xs"
+
+                            variant="secondary"
+
+                            onClick={() => {
+
+                              setSpotlightImageUrl('')
+
+                              setSpotlightImagePreview('')
+
+                            }}
+
+                          >
+
+                            წაშლა
+
+                          </Button>
+
+                        </div>
+
+                      </div>
+
+                    ) : (
+
+                      <button
+
+                        type="button"
+
+                        onClick={() => spotlightImageInputRef.current?.click()}
+
+                        className="w-full py-8 rounded-xl border-2 border-dashed text-sm text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:border-[var(--accent)] transition-colors"
+
+                        style={{ borderColor: 'var(--border-subtle)' }}
+
+                      >
+
+                        ფოტოს ატვირთვა
+
+                      </button>
+
+                    )}
+
+                  </div>
+
+                  <Button onClick={handleSaveSpotlight} disabled={spotlightSaving} className="w-full">
+
+                    {spotlightSaving ? 'ინახება...' : 'შენახვა'}
+
+                  </Button>
+
+                </div>
+
+              </Card>
+
+              <Card hover={false}>
+
+                <h3 className="font-semibold mb-4 text-[var(--text-primary)]">წინასწარი ხედი</h3>
+
+                <div
+
+                  className="rounded-2xl overflow-hidden border"
+
+                  style={{ borderColor: 'var(--border-subtle)', background: '#0a1a0f' }}
+
+                >
+
+                  <div className="p-6 text-center">
+
+                    <p className="text-[10px] uppercase tracking-[0.25em] mb-3" style={{ color: '#d4a853' }}>PEAR™</p>
+
+                    <p className="text-lg font-light mb-1" style={{ color: '#f5f0e8' }}>{spotlightTitle || '—'}</p>
+
+                  </div>
+
+                  <img
+
+                    src={spotlightImagePreview || defaultBillboard}
+
+                    alt="Preview"
+
+                    className="w-full aspect-video object-cover"
+
+                  />
+
+                  <p className="p-4 text-xs leading-relaxed" style={{ color: 'rgba(245,240,232,0.5)' }}>
+
+                    {spotlightDescription || 'აღწერა...'}
+
+                  </p>
 
                 </div>
 

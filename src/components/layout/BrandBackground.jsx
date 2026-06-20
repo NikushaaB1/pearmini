@@ -20,7 +20,7 @@ export default function BrandBackground() {
         />
       </AnimatePresence>
 
-      {/* Ambient gold orb — top left */}
+      {/* Ambient green orb — top left */}
       <motion.div
         className="absolute -top-32 -left-32 w-[500px] h-[500px] rounded-full"
         animate={{
@@ -29,12 +29,12 @@ export default function BrandBackground() {
         }}
         transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut' }}
         style={{
-          background: 'radial-gradient(circle, rgba(212,168,83,0.18) 0%, transparent 70%)',
+          background: 'radial-gradient(circle, rgba(34,85,51,0.22) 0%, transparent 70%)',
           filter: 'blur(40px)',
         }}
       />
 
-      {/* Rose-gold orb — top right */}
+      {/* Gold orb — top right */}
       <motion.div
         className="absolute -top-20 right-0 w-[400px] h-[400px] rounded-full"
         animate={{
@@ -43,18 +43,18 @@ export default function BrandBackground() {
         }}
         transition={{ duration: 15, repeat: Infinity, ease: 'easeInOut', delay: 2 }}
         style={{
-          background: 'radial-gradient(circle, rgba(183,110,121,0.14) 0%, transparent 70%)',
+          background: 'radial-gradient(circle, rgba(212,168,83,0.14) 0%, transparent 70%)',
           filter: 'blur(50px)',
         }}
       />
 
-      {/* Bottom warm glow */}
+      {/* Bottom green glow */}
       <motion.div
         className="absolute -bottom-40 left-1/2 -translate-x-1/2 w-[700px] h-[400px] rounded-full"
         animate={{ opacity: isDark ? 0.25 : 0.18 }}
         transition={{ duration: 0.8 }}
         style={{
-          background: 'radial-gradient(ellipse, rgba(201,169,98,0.12) 0%, transparent 70%)',
+          background: 'radial-gradient(ellipse, rgba(20,60,35,0.15) 0%, transparent 70%)',
           filter: 'blur(60px)',
         }}
       />
