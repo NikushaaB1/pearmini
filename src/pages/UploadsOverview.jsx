@@ -5,6 +5,7 @@ import { Upload, Image, ArrowRight } from 'lucide-react'
 import PageTransition from '../components/animations/PageTransition'
 import { FadeInContainer, FadeInItem } from '../components/animations/FadeIn'
 import Card from '../components/ui/Card'
+import PageHeader from '../components/ui/PageHeader'
 import ModelAvatar from '../components/ui/ModelAvatar'
 import { SkeletonCard } from '../components/ui/Loader'
 import { useUserStore } from '../store/useUserStore'
@@ -43,10 +44,12 @@ export default function UploadsOverview() {
     <PageTransition>
       <FadeInContainer>
         <FadeInItem>
-          <div className="mb-8">
-            <h1 className="text-4xl font-semibold tracking-tight text-[var(--text-primary)]">ატვირთვები</h1>
-            <p className="text-[var(--text-muted)] mt-2 text-lg">სულ {totalUploads} ფოტო</p>
-          </div>
+          <PageHeader
+            eyebrow="გალერეა"
+            icon={Upload}
+            title="ატვირთვები"
+            subtitle={`სულ ${totalUploads} ფოტო — ყველა მოდელის მასალა ერთ ადგილას`}
+          />
         </FadeInItem>
 
         <div className="space-y-8">
@@ -65,16 +68,17 @@ export default function UploadsOverview() {
                       </div>
                       <button
                         onClick={() => navigate(`/models/${model.id}`)}
-                        className="flex items-center gap-2 text-sm font-medium px-4 py-2 rounded-full text-[var(--text-primary)]"
-                        style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}
+                        className="elite-chip cursor-pointer hover:opacity-90 transition-opacity"
                       >
-                        ნახვა <ArrowRight size={14} />
+                        ნახვა <ArrowRight size={12} />
                       </button>
                     </div>
                     {images.length === 0 ? (
-                      <div className="text-center py-10 rounded-xl" style={{ background: 'var(--bg-hover)' }}>
-                        <Upload className="mx-auto text-[var(--text-muted)] mb-2" size={24} />
-                        <p className="text-sm text-[var(--text-muted)]">ცარიელია</p>
+                      <div className="empty-state py-8">
+                        <div className="empty-state-icon w-12 h-12">
+                          <Upload size={20} />
+                        </div>
+                        <p className="empty-state-title text-sm">ცარიელია</p>
                       </div>
                     ) : (
                       <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2">

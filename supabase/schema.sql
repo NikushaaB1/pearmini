@@ -483,6 +483,8 @@ create policy "settings_select_authenticated" on public.settings for select to a
 drop policy if exists "settings_write_admin" on public.settings;
 create policy "settings_write_admin" on public.settings for all to authenticated using (public.is_admin()) with check (public.is_admin());
 -- alter publication supabase_realtime add table public.settings;
+-- Default bg_music: see migration 20260623_bg_music_settings.sql
+-- value: { "url": "https://youtu.be/...", "volume": 0.5, "enabled": true }
 
 -- Poll votes table (Models Poll items + Ideas Poll)
 create table if not exists public.poll_votes (
@@ -515,6 +517,8 @@ create table if not exists public.daily_tasks (
   social_link text,
   points_reward integer not null default 10 check (points_reward >= 0),
   task_date date not null default current_date,
+  duration_minutes integer not null default 120 check (duration_minutes > 0 and duration_minutes <= 10080),
+  expires_at timestamptz not null default (now() + interval '120 minutes'),
   created_by text not null default 'ადმინი',
   created_at timestamptz not null default now()
 );
@@ -551,6 +555,22 @@ drop policy if exists "daily_completions_update_authenticated" on public.daily_t
 create policy "daily_completions_update_authenticated" on public.daily_task_completions for update to authenticated using (true) with check (true);
 drop policy if exists "daily_completions_delete_admin" on public.daily_task_completions;
 create policy "daily_completions_delete_admin" on public.daily_task_completions for delete to authenticated using (public.is_admin());
+
+create table if not exists public.daily_task_penalties (
+  id uuid primary key default gen_random_uuid(),
+  task_id uuid not null references public.daily_tasks(id) on delete cascade,
+  model_id text not null references public.models(id) on delete cascade,
+  points_deducted integer not null check (points_deducted > 0),
+  penalized_at timestamptz not null default now(),
+  unique (task_id, model_id)
+);
+create index if not exists daily_task_penalties_task_id_idx on public.daily_task_penalties (task_id);
+create index if not exists daily_task_penalties_model_id_idx on public.daily_task_penalties (model_id);
+alter table public.daily_task_penalties enable row level security;
+drop policy if exists "daily_penalties_select_authenticated" on public.daily_task_penalties;
+create policy "daily_penalties_select_authenticated" on public.daily_task_penalties for select to authenticated using (true);
+drop policy if exists "daily_penalties_insert_own" on public.daily_task_penalties;
+create policy "daily_penalties_insert_own" on public.daily_task_penalties for insert to authenticated with check (public.owns_model(model_id));
 
 -- CV submissions
 create table if not exists public.cv_submissions (

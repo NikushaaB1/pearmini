@@ -1,11 +1,12 @@
 import { useState, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Trophy, Award, Sparkles, Upload, Image as ImageIcon, Send, Clock, CheckCircle } from 'lucide-react'
+import { Trophy, Award, Upload, Image as ImageIcon, Send, Clock, CheckCircle } from 'lucide-react'
 import toast from 'react-hot-toast'
 import PageTransition from '../components/animations/PageTransition'
 import { FadeInContainer, FadeInItem } from '../components/animations/FadeIn'
 import Card from '../components/ui/Card'
 import Button from '../components/ui/Button'
+import PageHeader from '../components/ui/PageHeader'
 import ModelAvatar from '../components/ui/ModelAvatar'
 import { useUserStore } from '../store/useUserStore'
 import { submitDesign } from '../services/designsService'
@@ -67,54 +68,46 @@ export default function Challenges() {
     <PageTransition>
       <FadeInContainer>
         <FadeInItem>
-          <div className="mb-8 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-            <div>
-              <div className="flex items-center gap-2 text-[var(--accent)] text-xs uppercase tracking-[0.2em] mb-2">
-                <Sparkles size={12} />
-                გამოწვევები
-              </div>
-              <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight flex items-center gap-3 text-[var(--text-primary)]">
-                <Trophy size={30} strokeWidth={1.5} className="text-[var(--accent)]" />
-                გამოწვევები & დიზაინი
-              </h1>
-              <p className="text-[var(--text-muted)] mt-1.5">გამოავლინე შენი კრეატიულობა და დააგროვე ქულები</p>
-            </div>
-            <div className="flex gap-2">
+          <PageHeader
+            eyebrow="გამოწვევები"
+            icon={Trophy}
+            title="გამოწვევები & დიზაინი"
+            subtitle="გამოავლინე შენი კრეატიულობა და დააგროვე ქულები"
+          >
+            <div className="elite-tabs w-full sm:w-auto">
               <button
                 onClick={() => setActiveTab('challenges')}
-                className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
-                  activeTab === 'challenges'
-                    ? 'nav-link-active'
-                    : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]'
-                }`}
+                className={`elite-tab flex-1 sm:flex-none justify-center ${activeTab === 'challenges' ? 'elite-tab--active' : ''}`}
               >
                 გამოწვევები
               </button>
               <button
                 onClick={() => setActiveTab('designs')}
-                className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
-                  activeTab === 'designs'
-                    ? 'nav-link-active'
-                    : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]'
-                }`}
+                className={`elite-tab flex-1 sm:flex-none justify-center ${activeTab === 'designs' ? 'elite-tab--active' : ''}`}
               >
                 დიზაინები ({designs.length})
               </button>
             </div>
-          </div>
+          </PageHeader>
         </FadeInItem>
 
         {activeTab === 'challenges' && (
           <div className="space-y-6">
             {/* Active Challenges */}
             <FadeInItem>
-              <h2 className="text-lg font-bold mb-4 flex items-center gap-2 text-[var(--text-primary)]">
-                <Clock size={18} className="text-[var(--accent)]" /> აქტიური გამოწვევები
+              <h2 className="section-title">
+                <span className="section-title-icon">
+                  <Clock size={14} />
+                </span>
+                აქტიური გამოწვევები
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {challenges.filter((c) => c.status === 'active').length === 0 && (
-                  <div className="col-span-full py-12 text-center border rounded-2xl" style={{ borderColor: 'var(--border-subtle)' }}>
-                    <p className="text-sm text-[var(--text-muted)]">აქტიური გამოწვევები ამჟამად არ არის</p>
+                  <div className="col-span-full empty-state">
+                    <div className="empty-state-icon">
+                      <Trophy size={24} />
+                    </div>
+                    <p className="empty-state-title">აქტიური გამოწვევები ამჟამად არ არის</p>
                   </div>
                 )}
                 {challenges
@@ -152,8 +145,11 @@ export default function Challenges() {
 
             {/* Completed Challenges */}
             <FadeInItem>
-              <h2 className="text-lg font-bold mb-4 flex items-center gap-2 text-[var(--text-primary)]">
-                <CheckCircle size={18} className="text-emerald-500" /> დასრულებული გამოწვევები
+              <h2 className="section-title">
+                <span className="section-title-icon">
+                  <CheckCircle size={14} />
+                </span>
+                დასრულებული გამოწვევები
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {challenges.filter((c) => c.status === 'completed').length === 0 && (
@@ -208,25 +204,25 @@ export default function Challenges() {
 
                     <form onSubmit={handleSubmitDesign} className="space-y-4">
                       <div className="space-y-1">
-                        <label className="text-xs text-[var(--text-muted)] font-medium">დიზაინის სათაური:</label>
+                        <label className="elite-input-label">დიზაინის სათაური:</label>
                         <input
                           value={title}
                           onChange={(e) => setTitle(e.target.value)}
                           placeholder="მაგ: PEAR Elite კრეატიული კონცეპტი"
-                          className="admin-input"
+                          className="elite-input"
                           disabled={uploading}
                           required
                         />
                       </div>
 
                       <div className="space-y-1">
-                        <label className="text-xs text-[var(--text-muted)] font-medium">აღწერა (არასავალდებულო):</label>
+                        <label className="elite-input-label">აღწერა (არასავალდებულო):</label>
                         <textarea
                           value={description}
                           onChange={(e) => setDescription(e.target.value)}
                           placeholder="მოკლედ აღწერე შენი ნამუშევარი..."
                           rows={3}
-                          className="admin-input resize-none"
+                          className="elite-input resize-none"
                           disabled={uploading}
                         />
                       </div>
@@ -276,13 +272,18 @@ export default function Challenges() {
             {/* Right: Design Gallery Grid */}
             <div className={isModel ? 'lg:col-span-6' : 'col-span-full'}>
               <FadeInItem>
-                <h3 className="font-bold text-lg text-[var(--text-primary)] mb-4 flex items-center gap-2">
-                  <ImageIcon size={18} className="text-[var(--accent)]" /> დიზაინების გალერეა
+                <h3 className="section-title">
+                  <span className="section-title-icon">
+                    <ImageIcon size={14} />
+                  </span>
+                  დიზაინების გალერეა
                 </h3>
                 {designs.length === 0 ? (
-                  <div className="py-16 text-center border rounded-2xl" style={{ borderColor: 'var(--border-subtle)' }}>
-                    <ImageIcon size={32} className="text-[var(--text-subtle)] mx-auto mb-2" />
-                    <p className="text-sm text-[var(--text-muted)]">დიზაინები ჯერ არ ატვირთულა</p>
+                  <div className="empty-state">
+                    <div className="empty-state-icon">
+                      <ImageIcon size={24} />
+                    </div>
+                    <p className="empty-state-title">დიზაინები ჯერ არ ატვირთულა</p>
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

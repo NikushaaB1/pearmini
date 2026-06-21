@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import { Mail, Shield, Sparkles, User } from 'lucide-react'
 import PageTransition from '../components/animations/PageTransition'
 import { FadeInContainer, FadeInItem } from '../components/animations/FadeIn'
+import PageHeader from '../components/ui/PageHeader'
 import AvatarPicker from '../components/ui/AvatarPicker'
 import { changeUserAvatar } from '../services/avatarService'
 import { useUserStore } from '../store/useUserStore'
@@ -21,23 +22,21 @@ export default function Profile() {
     <PageTransition>
       <FadeInContainer>
         <FadeInItem>
-          <div className="mb-8">
-            <h1 className="text-4xl font-semibold tracking-tight flex items-center gap-3 text-[var(--text-primary)]">
-              <User size={32} strokeWidth={1.5} />
-              ჩემი პროფილი
-            </h1>
-            <p className="text-[var(--text-muted)] mt-2 text-lg">პროფილის ფოტო და ინფორმაცია</p>
-          </div>
+          <PageHeader
+            eyebrow="პროფილი"
+            icon={User}
+            title="ჩემი პროფილი"
+            subtitle="პროფილის ფოტო და ინფორმაცია"
+          />
         </FadeInItem>
 
         <FadeInItem>
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="relative rounded-3xl overflow-hidden border max-w-2xl"
-            style={{ borderColor: 'var(--border-subtle)', background: 'var(--hero-gradient)' }}
+            className="profile-hero max-w-2xl"
           >
-            <div className="absolute inset-0 opacity-30" style={{ background: 'var(--accent-soft)' }} />
+            <div className="profile-hero-glow" />
             <div className="relative p-6 sm:p-10 flex flex-col sm:flex-row items-start sm:items-center gap-6">
               <AvatarPicker
                 src={userAvatar}

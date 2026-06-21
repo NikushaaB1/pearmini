@@ -1,12 +1,13 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Gift, ShoppingBag, Sparkles, Coins, Check, CreditCard, Plane, Sun, Compass, Link2 } from 'lucide-react'
+import { Gift, ShoppingBag, Coins, Check, CreditCard, Sun, Link2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import PageTransition from '../components/animations/PageTransition'
 import { FadeInContainer, FadeInItem } from '../components/animations/FadeIn'
 import Card from '../components/ui/Card'
 import Button from '../components/ui/Button'
 import Modal from '../components/ui/Modal'
+import PageHeader from '../components/ui/PageHeader'
 import { useUserStore } from '../store/useUserStore'
 import { redeemReward } from '../services/rewardsService'
 
@@ -107,36 +108,26 @@ export default function Shop() {
     <PageTransition>
       <FadeInContainer>
         <FadeInItem>
-          <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
-            <div>
-              <div className="flex items-center gap-2 text-[var(--accent)] text-xs uppercase tracking-[0.2em] mb-2">
-                <Sparkles size={12} />
-                მაღაზია
-              </div>
-              <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight flex items-center gap-3 text-[var(--text-primary)]">
-                <ShoppingBag size={30} strokeWidth={1.5} className="text-[var(--accent)]" />
-                ქულების გადაცვლა
-              </h1>
-              <p className="text-[var(--text-muted)] mt-1.5">გადაცვალე შენი ქულები ელიტურ საჩუქრებსა და პრივილეგიებში</p>
-            </div>
-
-            {isModel && (
-              <div
-                className="px-6 py-4 rounded-3xl flex items-center gap-4 shadow-lg surface-glass"
-              >
-                <div className="w-10 h-10 rounded-2xl bg-[var(--accent-soft)] flex items-center justify-center text-[var(--accent)]">
-                  <Coins size={20} />
+          <PageHeader
+            eyebrow="მაღაზია"
+            icon={ShoppingBag}
+            title="ქულების გადაცვლა"
+            subtitle="გადაცვალე შენი ქულები ელიტურ საჩუქრებსა და პრივილეგიებში"
+            action={
+              isModel ? (
+                <div className="elite-stat min-w-[9rem]">
+                  <span className="elite-stat-label">
+                    <Coins size={12} />
+                    შენი ბალანსი
+                  </span>
+                  <span className="elite-stat-value">{myPoints} ქულა</span>
                 </div>
-                <div>
-                  <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider font-semibold">შენი ბალანსი</p>
-                  <p className="text-xl font-bold text-[var(--text-primary)]">{myPoints} ქულა</p>
-                </div>
-              </div>
-            )}
-          </div>
+              ) : null
+            }
+          />
         </FadeInItem>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="responsive-grid">
           {rewards.map((reward, i) => {
             const canAfford = myPoints >= reward.cost
             const isAffordableForModel = isModel && canAfford
@@ -162,8 +153,7 @@ export default function Shop() {
                           <reward.icon size={22} />
                         </div>
                         <div className="text-right">
-                          <span className="text-[10px] text-[var(--text-muted)] uppercase tracking-widest block font-bold">ღირებულება</span>
-                          <span className="text-md font-bold text-[var(--text-primary)]">{reward.cost} ქულა</span>
+                          <span className="elite-chip">{reward.cost} ქულა</span>
                         </div>
                       </div>
 

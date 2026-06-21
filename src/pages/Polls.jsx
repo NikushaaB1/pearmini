@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Vote,
-  Sparkles,
   ChevronDown,
   ChevronUp,
   Lightbulb,
@@ -16,6 +15,7 @@ import {
 import toast from 'react-hot-toast'
 import PageTransition from '../components/animations/PageTransition'
 import { FadeInContainer, FadeInItem } from '../components/animations/FadeIn'
+import PageHeader from '../components/ui/PageHeader'
 import ModelAvatar from '../components/ui/ModelAvatar'
 import { useUserStore } from '../store/useUserStore'
 import { toggleItemVote, castIdeaPollVote, getPollVotes } from '../services/pollsService'
@@ -238,10 +238,12 @@ function IdeasPollSection({ ideas, models, votes, uid, onIdeaVote }) {
 
   if (ideas.length === 0) {
     return (
-      <div className="py-20 text-center border rounded-2xl" style={{ borderColor: 'var(--border-subtle)' }}>
-        <Lightbulb size={36} className="text-[var(--text-subtle)] mx-auto mb-3" />
-        <p className="text-sm text-[var(--text-muted)]">იდეები ჯერ არ არის</p>
-        <p className="text-xs text-[var(--text-subtle)] mt-1">ჩატში დაწერე შენი იდეა</p>
+      <div className="empty-state">
+        <div className="empty-state-icon">
+          <Lightbulb size={24} />
+        </div>
+        <p className="empty-state-title">იდეები ჯერ არ არის</p>
+        <p className="empty-state-desc">ჩატში დაწერე შენი იდეა</p>
       </div>
     )
   }
@@ -418,59 +420,44 @@ export default function Polls() {
   return (
     <PageTransition>
       <FadeInContainer>
-        {/* ── Page header ── */}
         <FadeInItem>
-          <div className="mb-8 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-            <div>
-              <div className="flex items-center gap-2 text-[var(--accent)] text-xs uppercase tracking-[0.2em] mb-2">
-                <Sparkles size={12} />
-                კენჭისყრა
-              </div>
-              <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight flex items-center gap-3 text-[var(--text-primary)]">
-                <Vote size={30} strokeWidth={1.5} className="text-[var(--accent)]" />
-                POLL
-              </h1>
-              <p className="text-[var(--text-muted)] mt-1.5">
-                მისცე ხმა საუკეთესო იდეებს და დიზაინებს
-              </p>
-            </div>
-
-            {/* Tabs */}
-            <div className="flex gap-2">
+          <PageHeader
+            eyebrow="კენჭისყრა"
+            icon={Vote}
+            title="POLL"
+            subtitle="მისცე ხმა საუკეთესო იდეებს და დიზაინებს"
+          >
+            <div className="elite-tabs w-full sm:w-auto">
               {tabs.map((tab) => (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
-                    activeTab === tab.id
-                      ? 'nav-link-active'
-                      : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]'
-                  }`}
+                  className={`elite-tab flex-1 sm:flex-none justify-center ${activeTab === tab.id ? 'elite-tab--active' : ''}`}
                 >
                   <tab.icon size={14} />
                   {tab.label}
                 </button>
               ))}
             </div>
-          </div>
+          </PageHeader>
         </FadeInItem>
 
         {/* ── Tab 1: Models Poll ── */}
         {activeTab === 'models' && (
           <FadeInItem>
-            <div className="mb-5 flex items-center justify-between">
+            <div className="mb-5 flex items-center justify-between gap-3 flex-wrap">
               <div>
-                <h2 className="text-base font-bold text-[var(--text-primary)] flex items-center gap-2">
-                  <Users size={16} className="text-[var(--accent)]" />
+                <h2 className="section-title">
+                  <span className="section-title-icon">
+                    <Users size={14} />
+                  </span>
                   მოდელების კონტრიბუციები
                 </h2>
-                <p className="text-xs text-[var(--text-muted)] mt-0.5">
+                <p className="section-subtitle">
                   დააჭირე მოდელის ბარათს, ნახე მათი იდეები და დიზაინები — ხმა მიეცი
                 </p>
               </div>
-              <span className="text-xs text-[var(--text-subtle)] bg-[var(--bg-hover)] px-3 py-1.5 rounded-xl border" style={{ borderColor: 'var(--border-subtle)' }}>
-                {modelsWithContent.length} მოდელი
-              </span>
+              <span className="elite-chip">{modelsWithContent.length} მოდელი</span>
             </div>
 
             {loading ? (
@@ -478,12 +465,12 @@ export default function Polls() {
                 <p className="text-sm text-[var(--text-muted)]">იტვირთება...</p>
               </div>
             ) : modelsWithContent.length === 0 ? (
-              <div className="py-20 text-center border rounded-2xl" style={{ borderColor: 'var(--border-subtle)' }}>
-                <Users size={36} className="text-[var(--text-subtle)] mx-auto mb-3" />
-                <p className="text-sm text-[var(--text-muted)]">მოდელებს ჯერ არ აქვთ კონტრიბუციები</p>
-                <p className="text-xs text-[var(--text-subtle)] mt-1">
-                  ჩატში დაწერე იდეა ან ატვირთე დიზაინი
-                </p>
+              <div className="empty-state">
+                <div className="empty-state-icon">
+                  <Users size={24} />
+                </div>
+                <p className="empty-state-title">მოდელებს ჯერ არ აქვთ კონტრიბუციები</p>
+                <p className="empty-state-desc">ჩატში დაწერე იდეა ან ატვირთე დიზაინი</p>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -507,11 +494,13 @@ export default function Polls() {
         {activeTab === 'ideas' && (
           <FadeInItem>
             <div className="mb-5">
-              <h2 className="text-base font-bold text-[var(--text-primary)] flex items-center gap-2">
-                <Lightbulb size={16} className="text-amber-400" />
+              <h2 className="section-title">
+                <span className="section-title-icon">
+                  <Lightbulb size={14} />
+                </span>
                 საუკეთესო იდეის POLL
               </h2>
-              <p className="text-xs text-[var(--text-muted)] mt-0.5">
+              <p className="section-subtitle">
                 ირჩიე ერთი — ყველაზე ინტერესური და კრეატიული იდეა
               </p>
             </div>

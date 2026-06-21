@@ -218,8 +218,10 @@ export default function ModelProfile() {
         {activeTab === 'upload' && canUpload && (
           <FadeInItem>
             <div className="elite-panel p-5 sm:p-6 mb-8">
-              <h2 className="text-lg font-bold mb-4 flex items-center gap-2 text-[var(--text-primary)]">
-                <Camera size={18} className="text-[var(--accent)]" />
+              <h2 className="section-title">
+                <span className="section-title-icon">
+                  <Camera size={14} />
+                </span>
                 ახალი ფოტოები
               </h2>
               <UploadZone onUpload={handleUpload} uploading={uploading} progress={progress} />
@@ -236,9 +238,11 @@ export default function ModelProfile() {
                 ))}
               </div>
             ) : uploaded.length === 0 ? (
-              <div className="elite-panel p-12 text-center">
-                <Camera className="mx-auto text-[var(--text-subtle)] mb-3" size={32} />
-                <p className="text-[var(--text-muted)]">გალერეა ცარიელია</p>
+              <div className="empty-state">
+                <div className="empty-state-icon">
+                  <Camera size={24} />
+                </div>
+                <p className="empty-state-title">გალერეა ცარიელია</p>
                 {canUpload && (
                   <button
                     onClick={() => setActiveTab('upload')}

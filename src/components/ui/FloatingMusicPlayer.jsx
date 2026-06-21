@@ -1,76 +1,239 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Music, Play, Pause, Volume2, VolumeX, ChevronRight, ChevronLeft, Volume1 } from 'lucide-react'
+import { Music, Play, Pause, Volume2, VolumeX, ExternalLink } from 'lucide-react'
 import toast from 'react-hot-toast'
+import {
+  extractYouTubeId,
+  isYouTubeUrl,
+  loadYouTubeIframeApi,
+} from '../../utils/youtube'
+import { subscribeToBgMusic } from '../../services/musicService'
+
+const STORAGE_VOL = 'pear_bg_music_vol'
 
 export default function FloatingMusicPlayer() {
   const [isOpen, setIsOpen] = useState(false)
   const [isPlaying, setIsPlaying] = useState(false)
-  const [url, setUrl] = useState(() => localStorage.getItem('pear_bg_music_url') || '')
+  const [url, setUrl] = useState('')
+  const [musicEnabled, setMusicEnabled] = useState(true)
   const [volume, setVolume] = useState(() => {
-    const val = localStorage.getItem('pear_bg_music_vol')
+    const val = localStorage.getItem(STORAGE_VOL)
     return val ? parseFloat(val) : 0.5
   })
+  const [mode, setMode] = useState('audio')
 
   const audioRef = useRef(null)
+  const ytPlayerRef = useRef(null)
+  const ytContainerRef = useRef(null)
+  const pendingPlayRef = useRef(false)
 
-  // Initialize audio
+  const stopAudio = useCallback(() => {
+    if (audioRef.current) {
+      audioRef.current.pause()
+      audioRef.current.src = ''
+    }
+  }, [])
+
+  const destroyYtPlayer = useCallback(() => {
+    if (ytPlayerRef.current) {
+      try {
+        ytPlayerRef.current.destroy()
+      } catch {
+        /* ignore */
+      }
+      ytPlayerRef.current = null
+    }
+    if (ytContainerRef.current) {
+      ytContainerRef.current.innerHTML = ''
+    }
+  }, [])
+
+  const stopAll = useCallback(() => {
+    stopAudio()
+    destroyYtPlayer()
+    setIsPlaying(false)
+    pendingPlayRef.current = false
+  }, [stopAudio, destroyYtPlayer])
+
+  // Load music URL from Supabase settings (SQL)
+  useEffect(() => {
+    return subscribeToBgMusic((config) => {
+      setMusicEnabled(config.enabled)
+      if (config.url) {
+        setUrl(config.url)
+        setMode(isYouTubeUrl(config.url) ? 'youtube' : 'audio')
+      }
+      if (config.volume != null && !localStorage.getItem(STORAGE_VOL)) {
+        setVolume(config.volume)
+      }
+    })
+  }, [])
+
+  // Initialize HTML audio element (once)
   useEffect(() => {
     audioRef.current = new Audio()
     audioRef.current.loop = true
-    audioRef.current.volume = volume
 
-    if (url) {
-      audioRef.current.src = url
-    }
+    const vol = localStorage.getItem(STORAGE_VOL)
+    audioRef.current.volume = vol ? parseFloat(vol) : 0.5
 
     return () => {
       if (audioRef.current) {
         audioRef.current.pause()
+        audioRef.current.src = ''
         audioRef.current = null
       }
+      destroyYtPlayer()
     }
-  }, [])
+  }, [destroyYtPlayer])
 
   // Sync volume
   useEffect(() => {
-    if (audioRef.current) {
-      audioRef.current.volume = volume
-      localStorage.setItem('pear_bg_music_vol', volume.toString())
+    localStorage.setItem(STORAGE_VOL, volume.toString())
+    if (audioRef.current) audioRef.current.volume = volume
+    if (ytPlayerRef.current?.setVolume) {
+      try {
+        ytPlayerRef.current.setVolume(Math.round(volume * 100))
+      } catch {
+        /* ignore */
+      }
     }
   }, [volume])
 
-  const handlePlayPause = () => {
-    if (!audioRef.current) return
+  const initYouTubePlayer = useCallback(
+    async (videoId, autoplay = false) => {
+      await loadYouTubeIframeApi()
+
+      if (!ytContainerRef.current) return
+
+      destroyYtPlayer()
+
+      pendingPlayRef.current = autoplay
+
+      ytPlayerRef.current = new window.YT.Player(ytContainerRef.current, {
+        height: 1,
+        width: 1,
+        videoId,
+        playerVars: {
+          autoplay: autoplay ? 1 : 0,
+          loop: 1,
+          playlist: videoId,
+          controls: 0,
+          disablekb: 1,
+          fs: 0,
+          modestbranding: 1,
+          rel: 0,
+          playsinline: 1,
+          origin: window.location.origin,
+        },
+        events: {
+          onReady: (event) => {
+            try {
+              event.target.setVolume(Math.round(volume * 100))
+              if (pendingPlayRef.current) {
+                event.target.playVideo()
+              }
+            } catch {
+              /* ignore */
+            }
+          },
+          onStateChange: (event) => {
+            const YT = window.YT
+            if (!YT) return
+            if (event.data === YT.PlayerState.PLAYING) {
+              setIsPlaying(true)
+              pendingPlayRef.current = false
+            } else if (
+              event.data === YT.PlayerState.PAUSED ||
+              event.data === YT.PlayerState.ENDED
+            ) {
+              setIsPlaying(false)
+            }
+          },
+          onError: () => {
+            setIsPlaying(false)
+            toast.error('YouTube ვიდეო ვერ ჩაირთო — შეამოწმე ლინკი')
+          },
+        },
+      })
+    },
+    [destroyYtPlayer, volume]
+  )
+
+  const handlePlayPause = async () => {
+    const trimmed = url.trim()
+
+    if (!musicEnabled) {
+      toast.error('ფონური მუსიკა გამორთულია ადმინის მიერ')
+      return
+    }
+
+    if (!trimmed) {
+      toast.error('ადმინი ჯერ უნდა დაამატოს მუსიკის ლინკი')
+      return
+    }
 
     if (isPlaying) {
-      audioRef.current.pause()
+      if (mode === 'youtube' && ytPlayerRef.current?.pauseVideo) {
+        ytPlayerRef.current.pauseVideo()
+      } else if (audioRef.current) {
+        audioRef.current.pause()
+      }
       setIsPlaying(false)
-    } else {
-      if (!url.trim()) {
-        toast.error('გთხოვთ ჩააკოპიროთ მუსიკის URL')
+      return
+    }
+
+    if (isYouTubeUrl(trimmed)) {
+      const videoId = extractYouTubeId(trimmed)
+      if (!videoId) {
+        toast.error('YouTube ლინკი არასწორია')
         return
       }
 
-      if (audioRef.current.src !== url) {
-        audioRef.current.src = url
+      stopAudio()
+      setMode('youtube')
+
+      const currentId =
+        ytPlayerRef.current?.getVideoData?.()?.video_id
+
+      if (ytPlayerRef.current && currentId === videoId) {
+        try {
+          ytPlayerRef.current.playVideo()
+          return
+        } catch {
+          destroyYtPlayer()
+        }
       }
 
-      audioRef.current
-        .play()
-        .then(() => {
-          setIsPlaying(true)
-          localStorage.setItem('pear_bg_music_url', url)
-        })
-        .catch((err) => {
-          console.error('Audio playback error:', err)
-          const errorMsg = err?.name === 'NotAllowedError' 
-            ? 'ბრაუზერი აუდიოს დაკვრას უშედეგდება (ავტოპლეი დახშულია)'
-            : err?.name === 'NotSupportedError'
+      try {
+        await initYouTubePlayer(videoId, true)
+      } catch {
+        toast.error('YouTube პლეერი ვერ ჩაირთო')
+      }
+      return
+    }
+
+    // Direct audio URL
+    destroyYtPlayer()
+    setMode('audio')
+
+    if (!audioRef.current) return
+
+    try {
+      if (audioRef.current.src !== trimmed) {
+        audioRef.current.src = trimmed
+      }
+      await audioRef.current.play()
+      setIsPlaying(true)
+    } catch (err) {
+      console.error('Audio playback error:', err)
+      const errorMsg =
+        err?.name === 'NotAllowedError'
+          ? 'ბრაუზერი აუდიოს დაკვრას უშედეგდება — დააჭირე Play ღილაკს'
+          : err?.name === 'NotSupportedError'
             ? 'ამ ფორმატის აუდიო დაკვრა ვერ ხერხდება'
-            : 'აუდიო ფაილის ჩართვა ვერ მოხერხდა. შეამოწმეთ ლინკი.'
-          toast.error(errorMsg)
-        })
+            : 'აუდიო ვერ ჩაირთო. გამოიყენე YouTube ან MP3 ლინკი.'
+      toast.error(errorMsg)
     }
   }
 
@@ -82,33 +245,35 @@ export default function FloatingMusicPlayer() {
     setVolume((v) => Math.max(0, parseFloat((v - 0.1).toFixed(1))))
   }
 
-  const handleUrlChange = (e) => {
-    const nextUrl = e.target.value
-    setUrl(nextUrl)
-    if (isPlaying && audioRef.current) {
-      audioRef.current.pause()
-      setIsPlaying(false)
-      if (audioRef.current) {
-        audioRef.current.src = ''
-      }
-    }
-  }
+  const youtubeId = extractYouTubeId(url)
+  const youtubeWatchUrl = youtubeId ? `https://www.youtube.com/watch?v=${youtubeId}` : null
 
   return (
-    <div className="fixed bottom-24 left-6 z-50 flex items-end gap-3 font-sans">
+    <div className="fixed bottom-20 sm:bottom-24 left-3 sm:left-6 z-50 flex items-end gap-3 font-sans max-w-[calc(100vw-1.5rem)]">
+      {/* Hidden YouTube player container */}
+      <div
+        ref={ytContainerRef}
+        className="fixed w-px h-px opacity-0 pointer-events-none overflow-hidden"
+        style={{ left: -9999, top: -9999 }}
+        aria-hidden
+      />
+
       <AnimatePresence>
         {isOpen && (
           <motion.div
             initial={{ opacity: 0, scale: 0.9, x: -20 }}
             animate={{ opacity: 1, scale: 1, x: 0 }}
             exit={{ opacity: 0, scale: 0.9, x: -20 }}
-            className="w-72 p-4 rounded-2xl glass-morphism-strong border shadow-xl flex flex-col gap-3"
+            className="w-full sm:w-80 p-4 rounded-2xl glass-morphism-strong border shadow-xl flex flex-col gap-3"
             style={{
               borderColor: 'var(--border-subtle)',
               background: 'var(--bg-elevated)',
             }}
           >
-            <div className="flex items-center justify-between border-b pb-2" style={{ borderColor: 'var(--border-subtle)' }}>
+            <div
+              className="flex items-center justify-between border-b pb-2"
+              style={{ borderColor: 'var(--border-subtle)' }}
+            >
               <div className="flex items-center gap-2">
                 <Music className="text-[var(--accent)] animate-pulse" size={16} />
                 <span className="text-xs font-semibold uppercase tracking-wider text-[var(--text-primary)]">
@@ -121,35 +286,68 @@ export default function FloatingMusicPlayer() {
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label className="text-[10px] text-[var(--text-muted)]">მუსიკის ლინკი (URL):</label>
+              <label className="text-[10px] text-[var(--text-muted)]">
+                YouTube ან MP3 ლინკი:
+              </label>
               <input
                 type="text"
                 value={url}
-                onChange={handleUrlChange}
-                placeholder="https://example.com/music.mp3"
-                className="w-full text-xs px-2.5 py-1.5 rounded-xl border focus:outline-none"
+                readOnly
+                placeholder="ადმინი დაამატებს YouTube ლინკს"
+                className="w-full text-xs px-2.5 py-1.5 rounded-xl border opacity-90 cursor-default"
                 style={{
                   background: 'var(--bg-hover)',
                   borderColor: 'var(--border-subtle)',
                   color: 'var(--text-primary)',
                 }}
               />
+              <p className="text-[10px] text-[var(--text-muted)] leading-relaxed">
+                ლინკი ინახება <span className="text-[var(--accent)]">Supabase SQL</span>-ში.
+                შეცვლა: ადმინ პანელი → მუსიკა
+              </p>
             </div>
+
+            {youtubeId && (
+              <div
+                className="flex items-center justify-between gap-2 px-2.5 py-2 rounded-xl text-[10px]"
+                style={{ background: 'var(--bg-hover)' }}
+              >
+                <span className="text-[var(--text-muted)] truncate">
+                  YouTube · {youtubeId}
+                </span>
+                {youtubeWatchUrl && (
+                  <a
+                    href={youtubeWatchUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="shrink-0 flex items-center gap-1 text-[var(--accent)] hover:underline"
+                  >
+                    <ExternalLink size={10} />
+                    ნახვა
+                  </a>
+                )}
+              </div>
+            )}
 
             <div className="flex items-center justify-between mt-1">
               <button
                 onClick={handlePlayPause}
-                className="flex items-center justify-center w-9 h-9 rounded-full text-white transition-all shadow-md"
-                style={{ background: 'var(--accent)' }}
+                className="flex items-center justify-center w-10 h-10 rounded-full text-white transition-all shadow-md btn-shine"
+                style={{ background: 'var(--gradient-gold)' }}
+                aria-label={isPlaying ? 'შეჩერება' : 'დაკვრა'}
               >
-                {isPlaying ? <Pause size={14} fill="#fff" /> : <Play size={14} fill="#fff" className="ml-0.5" />}
+                {isPlaying ? (
+                  <Pause size={15} fill="#1a1008" color="#1a1008" />
+                ) : (
+                  <Play size={15} fill="#1a1008" color="#1a1008" className="ml-0.5" />
+                )}
               </button>
 
               <div className="flex items-center gap-1">
                 <button
                   onClick={handleVolumeDown}
                   className="p-1.5 rounded-lg hover:bg-[var(--bg-hover)] text-[var(--text-muted)]"
-                  title="Volume Down"
+                  title="დაბალი"
                 >
                   <VolumeX size={14} />
                 </button>
@@ -159,12 +357,18 @@ export default function FloatingMusicPlayer() {
                 <button
                   onClick={handleVolumeUp}
                   className="p-1.5 rounded-lg hover:bg-[var(--bg-hover)] text-[var(--text-muted)]"
-                  title="Volume Up"
+                  title="მაღალი"
                 >
                   <Volume2 size={14} />
                 </button>
               </div>
             </div>
+
+            {mode === 'youtube' && (
+              <p className="text-[9px] text-[var(--text-subtle)] text-center">
+                YouTube მუსიკა · loop ჩართულია
+              </p>
+            )}
           </motion.div>
         )}
       </AnimatePresence>
@@ -173,14 +377,22 @@ export default function FloatingMusicPlayer() {
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.95 }}
         onClick={() => setIsOpen(!isOpen)}
-        className="w-12 h-12 rounded-full flex items-center justify-center shadow-lg relative border"
+        className="w-12 h-12 rounded-full flex items-center justify-center shadow-lg relative border shrink-0"
         style={{
           background: 'var(--bg-card-solid)',
           borderColor: 'var(--border-subtle)',
           boxShadow: 'var(--shadow-card)',
         }}
+        aria-label="მუსიკის პლეერი"
       >
-        <Music size={18} className={isPlaying ? 'text-[var(--accent)] animate-spin [animation-duration:6s]' : 'text-[var(--text-muted)]'} />
+        <Music
+          size={18}
+          className={
+            isPlaying
+              ? 'text-[var(--accent)] animate-spin [animation-duration:6s]'
+              : 'text-[var(--text-muted)]'
+          }
+        />
         {isPlaying && (
           <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-green-500 border-2 border-white rounded-full animate-ping" />
         )}

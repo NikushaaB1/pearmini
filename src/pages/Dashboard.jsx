@@ -175,12 +175,14 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10">
           <FadeInItem>
             <div className="elite-panel p-5 sm:p-6 h-full">
-              <h3 className="text-lg font-bold mb-4 flex items-center gap-2 text-[var(--text-primary)]">
+              <h3 className="section-title">
                 <Trophy size={18} className="text-[var(--accent)]" />
                 ტოპ რეიტინგი
               </h3>
               {leaderboard.length === 0 ? (
-                <p className="text-sm text-[var(--text-muted)] py-8 text-center">მოდელები ჯერ არ არის</p>
+                <div className="empty-state py-8">
+                  <p className="empty-state-title text-sm">მოდელები ჯერ არ არის</p>
+                </div>
               ) : (
                 <div className="space-y-2">
                   {leaderboard.slice(0, 5).map((model, i) => (
@@ -208,7 +210,7 @@ export default function Dashboard() {
 
           <FadeInItem>
             <div className="elite-panel p-5 sm:p-6 h-full">
-              <h3 className="text-lg font-bold mb-4 flex items-center gap-2 text-[var(--text-primary)]">
+              <h3 className="section-title">
                 <Megaphone size={18} className="text-[var(--accent)]" />
                 სიახლეები
               </h3>
@@ -225,7 +227,9 @@ export default function Dashboard() {
                   </div>
                 ))}
                 {announcements.length === 0 && (
-                  <p className="text-sm text-[var(--text-muted)] py-8 text-center">განცხადებები ცარიელია</p>
+                  <div className="empty-state py-8">
+                    <p className="empty-state-title text-sm">განცხადებები ცარიელია</p>
+                  </div>
                 )}
               </div>
             </div>
@@ -254,7 +258,9 @@ export default function Dashboard() {
             </div>
 
             {models.length === 0 ? (
-              <p className="text-sm text-[var(--text-muted)] text-center py-10">მოდელები ჯერ არ არის</p>
+              <div className="empty-state">
+                <p className="empty-state-title">მოდელები ჯერ არ არის</p>
+              </div>
             ) : (
               <div className="space-y-3">
                 {models.map((model, i) => {

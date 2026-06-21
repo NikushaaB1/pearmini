@@ -46,6 +46,7 @@ export default function Button({
         px-6 py-3 rounded-full font-semibold text-sm
         transition-all duration-200
         disabled:opacity-50 disabled:cursor-not-allowed
+        ${variant === 'primary' ? 'btn-shine' : ''}
         ${variants[variant]}
         ${className}
       `}

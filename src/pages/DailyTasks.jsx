@@ -1,17 +1,17 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect, useCallback, useRef } from 'react'
 import { Navigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   ListChecks,
   Plus,
   Trash2,
-  Sparkles,
   Instagram,
   Star,
   CheckCircle2,
   Clock,
   Crown,
   Link2,
+  AlertTriangle,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import PageTransition from '../components/animations/PageTransition'
@@ -19,6 +19,8 @@ import { FadeInContainer, FadeInItem } from '../components/animations/FadeIn'
 import Card from '../components/ui/Card'
 import Button from '../components/ui/Button'
 import ModelAvatar from '../components/ui/ModelAvatar'
+import PageHeader from '../components/ui/PageHeader'
+import TaskTimer, { isTaskExpired } from '../components/ui/TaskTimer'
 import { useUserStore } from '../store/useUserStore'
 import {
   canAssignDailyTaskPoints,
@@ -30,6 +32,7 @@ import {
   deleteDailyTask,
   submitTaskCompletion,
   awardTaskPoints,
+  applyTaskPenalty,
 } from '../services/dailyTasksService'
 
 function todayDate() {
@@ -49,13 +52,48 @@ function formatDate(dateStr) {
   }
 }
 
+function formatDuration(minutes) {
+  const h = Math.floor(minutes / 60)
+  const m = minutes % 60
+  if (h > 0 && m > 0) return `${h}სთ ${m}წთ`
+  if (h > 0) return `${h} საათი`
+  return `${m} წუთი`
+}
+
+function TaskPenaltyWatcher({ taskId, modelId, expiresAt, completed, penalized }) {
+  const appliedRef = useRef(false)
+
+  const tryPenalty = useCallback(async () => {
+    if (!modelId || completed || penalized || appliedRef.current) return
+    if (!isTaskExpired(expiresAt)) return
+
+    appliedRef.current = true
+    try {
+      const result = await applyTaskPenalty({ taskId, modelId })
+      if (result) {
+        toast.error(`ვადა გავიდა — ${result.pointsDeducted} ქულა დაკლებულია`, { icon: '⏱️' })
+      }
+    } catch {
+      appliedRef.current = false
+    }
+  }, [taskId, modelId, expiresAt, completed, penalized])
+
+  useEffect(() => {
+    tryPenalty()
+  }, [tryPenalty])
+
+  return null
+}
+
 export default function DailyTasks() {
-  const { user, role, modelId, models, dailyTasks, dailyTaskCompletions } = useUserStore()
+  const { user, role, modelId, models, dailyTasks, dailyTaskCompletions, dailyTaskPenalties } =
+    useUserStore()
 
   const [filterDate, setFilterDate] = useState(todayDate())
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [pointsReward, setPointsReward] = useState('10')
+  const [durationMinutes, setDurationMinutes] = useState('120')
   const [socialLink, setSocialLink] = useState('')
   const [taskDate, setTaskDate] = useState(todayDate())
   const [creating, setCreating] = useState(false)
@@ -81,12 +119,28 @@ export default function DailyTasks() {
     return map
   }, [dailyTaskCompletions])
 
+  const penaltiesByTask = useMemo(() => {
+    const map = {}
+    for (const p of dailyTaskPenalties) {
+      if (!map[p.taskId]) map[p.taskId] = []
+      map[p.taskId].push(p)
+    }
+    return map
+  }, [dailyTaskPenalties])
+
   const myCompletions = useMemo(() => {
     if (!modelId) return new Set()
     return new Set(
       dailyTaskCompletions.filter((c) => c.modelId === modelId).map((c) => c.taskId)
     )
   }, [dailyTaskCompletions, modelId])
+
+  const myPenalties = useMemo(() => {
+    if (!modelId) return new Set()
+    return new Set(
+      dailyTaskPenalties.filter((p) => p.modelId === modelId).map((p) => p.taskId)
+    )
+  }, [dailyTaskPenalties, modelId])
 
   const handleCreate = async (e) => {
     e.preventDefault()
@@ -99,6 +153,7 @@ export default function DailyTasks() {
         description,
         socialLink,
         pointsReward: Number(pointsReward) || 0,
+        durationMinutes: Number(durationMinutes) || 120,
         taskDate,
         createdBy: user?.displayName || 'ადმინი',
       })
@@ -106,6 +161,7 @@ export default function DailyTasks() {
       setTitle('')
       setDescription('')
       setPointsReward('10')
+      setDurationMinutes('120')
       setSocialLink('')
     } catch (err) {
       toast.error(err.message || 'შექმნა ვერ მოხერხდა')
@@ -126,6 +182,9 @@ export default function DailyTasks() {
 
   const handleComplete = async (task) => {
     if (!modelId) return toast.error('მოდელის პროფილი ვერ მოიძებნა')
+    if (isTaskExpired(task.expiresAt)) {
+      return toast.error('ვადა უკვე გავიდა — დავალება ვერ შესრულდება')
+    }
 
     try {
       await submitTaskCompletion({ taskId: task.id, modelId })
@@ -157,42 +216,50 @@ export default function DailyTasks() {
     }
   }
 
+  const handleTimerExpire = useCallback(
+    async (task) => {
+      if (!modelId || myCompletions.has(task.id) || myPenalties.has(task.id)) return
+      try {
+        const result = await applyTaskPenalty({ taskId: task.id, modelId })
+        if (result) {
+          toast.error(`ვადა გავიდა — ${result.pointsDeducted} ქულა დაკლებულია`, { icon: '⏱️' })
+        }
+      } catch {
+        /* ignore */
+      }
+    },
+    [modelId, myCompletions, myPenalties]
+  )
+
   if (!user) return <Navigate to="/login" replace />
 
   return (
     <PageTransition>
       <FadeInContainer>
         <FadeInItem>
-          <div className="mb-8 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-            <div>
-              <div className="flex items-center gap-2 text-[var(--accent)] text-xs uppercase tracking-[0.2em] mb-2">
-                <Sparkles size={12} />
-                ყოველდღიური
+          <PageHeader
+            eyebrow="ყოველდღიური"
+            icon={ListChecks}
+            title="ყოველდღიური დავალებები"
+            subtitle={
+              isAdmin
+                ? 'შექმენი დღიური დავალებები მოდელებისთვის'
+                : canAward
+                  ? 'შეამოწმე შესრულებული დავალებები და მიანიჭე ქულები'
+                  : 'შეასრულე დღიური დავალებები და დააგროვე ქულები'
+            }
+            action={
+              <div className="flex items-center gap-2">
+                <label className="text-xs text-[var(--text-muted)] shrink-0">თარიღი:</label>
+                <input
+                  type="date"
+                  value={filterDate}
+                  onChange={(e) => setFilterDate(e.target.value)}
+                  className="elite-input !py-2 !px-3 text-sm w-full sm:w-auto"
+                />
               </div>
-              <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight flex items-center gap-3 text-[var(--text-primary)]">
-                <ListChecks size={30} strokeWidth={1.5} className="text-[var(--accent)]" />
-                ყოველდღიური დავალებები
-              </h1>
-              <p className="text-[var(--text-muted)] mt-1.5">
-                {isAdmin
-                  ? 'შექმენი დღიური დავალებები მოდელებისთვის'
-                  : canAward
-                    ? 'შეამოწმე შესრულებული დავალებები და მიანიჭე ქულები'
-                    : 'შეასრულე დღიური დავალებები და დააგროვე ქულები'}
-              </p>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <label className="text-xs text-[var(--text-muted)]">თარიღი:</label>
-              <input
-                type="date"
-                value={filterDate}
-                onChange={(e) => setFilterDate(e.target.value)}
-                className="px-3 py-2 rounded-xl text-sm border glass text-[var(--text-primary)]"
-                style={{ borderColor: 'var(--border-subtle)' }}
-              />
-            </div>
-          </div>
+            }
+          />
         </FadeInItem>
 
         {projectFace && !isAdmin && (
@@ -215,7 +282,7 @@ export default function DailyTasks() {
 
         {isAdmin && (
           <FadeInItem>
-            <Card hover={false} className="mb-8">
+            <Card hover={false} className="mb-6 sm:mb-8">
               <h2 className="font-semibold text-[var(--text-primary)] mb-4 flex items-center gap-2">
                 <Plus size={18} />
                 ახალი დავალება
@@ -223,17 +290,16 @@ export default function DailyTasks() {
               <form onSubmit={handleCreate} className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="text-xs text-[var(--text-muted)] mb-1 block">სათაური *</label>
+                    <label className="elite-input-label">სათაური *</label>
                     <input
                       value={title}
                       onChange={(e) => setTitle(e.target.value)}
                       placeholder="მაგ: Instagram Story გამოქვეყნება"
-                      className="w-full px-3 py-2.5 rounded-xl text-sm border glass text-[var(--text-primary)]"
-                      style={{ borderColor: 'var(--border-subtle)' }}
+                      className="elite-input"
                     />
                   </div>
                   <div>
-                    <label className="text-xs text-[var(--text-muted)] mb-1 block">თარიღი</label>
+                    <label className="elite-input-label">თარიღი</label>
                     <input
                       type="date"
                       value={taskDate}
@@ -241,57 +307,67 @@ export default function DailyTasks() {
                         setTaskDate(e.target.value)
                         setFilterDate(e.target.value)
                       }}
-                      className="w-full px-3 py-2.5 rounded-xl text-sm border glass text-[var(--text-primary)]"
-                      style={{ borderColor: 'var(--border-subtle)' }}
+                      className="elite-input"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="text-xs text-[var(--text-muted)] mb-1 block">აღწერა</label>
+                  <label className="elite-input-label">აღწერა</label>
                   <textarea
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     rows={2}
                     placeholder="დავალების დეტალები..."
-                    className="w-full px-3 py-2.5 rounded-xl text-sm border glass text-[var(--text-primary)] resize-none"
-                    style={{ borderColor: 'var(--border-subtle)' }}
+                    className="elite-input resize-none"
                   />
                 </div>
 
-                <div className="flex flex-wrap items-end gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
                   <div>
-                    <label className="text-xs text-[var(--text-muted)] mb-1 block">ქულები</label>
+                    <label className="elite-input-label">ქულები</label>
                     <input
                       type="number"
                       min="0"
                       value={pointsReward}
                       onChange={(e) => setPointsReward(e.target.value)}
-                      className="w-24 px-3 py-2.5 rounded-xl text-sm border glass text-[var(--text-primary)]"
-                      style={{ borderColor: 'var(--border-subtle)' }}
+                      className="elite-input"
                     />
                   </div>
-
-                  <div className="flex-1 min-w-[200px]">
-                    <label className="text-xs text-[var(--text-muted)] mb-1 flex items-center gap-1">
+                  <div>
+                    <label className="elite-input-label flex items-center gap-1">
+                      <Clock size={12} />
+                      ტაიმერი (წუთი)
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      max="10080"
+                      value={durationMinutes}
+                      onChange={(e) => setDurationMinutes(e.target.value)}
+                      className="elite-input"
+                      placeholder="120"
+                    />
+                    <p className="text-[10px] text-[var(--text-muted)] mt-1">
+                      {formatDuration(Number(durationMinutes) || 120)}
+                    </p>
+                  </div>
+                  <div className="col-span-2">
+                    <label className="elite-input-label flex items-center gap-1">
                       <Instagram size={12} className="text-pink-500" />
-                      სოციალური ლინკი (არასავალდებულო)
+                      სოციალური ლინკი
                     </label>
                     <input
                       type="url"
                       value={socialLink}
                       onChange={(e) => setSocialLink(e.target.value)}
                       placeholder="https://instagram.com/pear..."
-                      className="w-full px-3 py-2.5 rounded-xl text-sm border glass text-[var(--text-primary)]"
-                      style={{ borderColor: 'var(--border-subtle)' }}
+                      className="elite-input"
                     />
-                    <p className="text-[10px] text-[var(--text-muted)] mt-1">
-                      დასრულებისას მოდელი ამ ლინკზე გადავა
-                    </p>
                   </div>
                 </div>
 
-                <Button type="submit" disabled={creating}>
+                <Button type="submit" disabled={creating} className="w-full sm:w-auto">
                   {creating ? 'იქმნება...' : 'დავალების შექმნა'}
                 </Button>
               </form>
@@ -301,26 +377,31 @@ export default function DailyTasks() {
 
         <FadeInItem>
           {tasksForDate.length === 0 ? (
-            <Card hover={false} className="text-center py-16">
-              <ListChecks size={40} className="mx-auto text-[var(--text-muted)] mb-3 opacity-40" />
-              <p className="text-[var(--text-muted)]">
+            <div className="empty-state">
+              <div className="empty-state-icon">
+                <ListChecks size={24} />
+              </div>
+              <p className="empty-state-title">
                 {filterDate === todayDate()
                   ? 'დღეს დავალებები ჯერ არ არის'
                   : `${formatDate(filterDate)}-ზე დავალებები არ მოიძებნა`}
               </p>
               {isAdmin && (
-                <p className="text-xs text-[var(--text-muted)] mt-2">
+                <p className="empty-state-desc">
                   დაამატე ახალი დავალება ზემოთ ფორმით
                 </p>
               )}
-            </Card>
+            </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               {tasksForDate.map((task) => {
                 const completions = completionsByTask[task.id] || []
+                const penalties = penaltiesByTask[task.id] || []
                 const pending = completions.filter((c) => c.pointsAwarded == null)
                 const done = completions.filter((c) => c.pointsAwarded != null)
                 const iCompleted = myCompletions.has(task.id)
+                const iPenalized = myPenalties.has(task.id)
+                const expired = isTaskExpired(task.expiresAt)
 
                 return (
                   <motion.div
@@ -328,23 +409,42 @@ export default function DailyTasks() {
                     layout
                     className="rounded-2xl overflow-hidden surface-glass"
                   >
-                    <div className="p-5">
-                      <div className="flex items-start justify-between gap-4">
+                    {isModel && (
+                      <TaskPenaltyWatcher
+                        taskId={task.id}
+                        modelId={modelId}
+                        expiresAt={task.expiresAt}
+                        completed={iCompleted}
+                        penalized={iPenalized}
+                      />
+                    )}
+
+                    <div className="p-4 sm:p-5">
+                      <div className="flex items-start justify-between gap-3 sm:gap-4">
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap mb-1">
-                            <h3 className="font-semibold text-[var(--text-primary)]">{task.title}</h3>
-                            <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-[var(--accent-soft)] text-[var(--accent)]">
+                          <div className="flex flex-wrap items-center gap-2 mb-1.5">
+                            <h3 className="font-semibold text-[var(--text-primary)] break-words">
+                              {task.title}
+                            </h3>
+                            <span className="elite-chip shrink-0">
                               +{task.pointsReward} ქულა
                             </span>
+                            <TaskTimer
+                              expiresAt={task.expiresAt}
+                              size="sm"
+                              onExpire={() => handleTimerExpire(task)}
+                            />
                             {task.socialLink && (
-                              <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-pink-500/10 text-pink-500 flex items-center gap-1">
+                              <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-pink-500/10 text-pink-500 flex items-center gap-1 shrink-0">
                                 <Instagram size={10} />
                                 სოც. ლინკი
                               </span>
                             )}
                           </div>
                           {task.description && (
-                            <p className="text-sm text-[var(--text-muted)] mt-1">{task.description}</p>
+                            <p className="text-sm text-[var(--text-muted)] mt-1 break-words">
+                              {task.description}
+                            </p>
                           )}
                           {task.socialLink && isAdmin && (
                             <a
@@ -357,8 +457,12 @@ export default function DailyTasks() {
                               {task.socialLink}
                             </a>
                           )}
-                          <p className="text-[10px] text-[var(--text-muted)] mt-2">
-                            {formatDate(task.taskDate)} · {completions.length} შესრულება
+                          <p className="text-[10px] text-[var(--text-muted)] mt-2 flex flex-wrap gap-x-2 gap-y-1">
+                            <span>{formatDate(task.taskDate)}</span>
+                            <span>·</span>
+                            <span>{completions.length} შესრულება</span>
+                            <span>·</span>
+                            <span>{formatDuration(task.durationMinutes)} ტაიმერი</span>
                           </p>
                         </div>
 
@@ -373,9 +477,12 @@ export default function DailyTasks() {
                         )}
                       </div>
 
-                      {isModel && !iCompleted && (
-                        <div className="mt-4 pt-4 border-t" style={{ borderColor: 'var(--border-subtle)' }}>
-                          <Button size="sm" onClick={() => handleComplete(task)}>
+                      {isModel && !iCompleted && !iPenalized && !expired && (
+                        <div
+                          className="mt-4 pt-4 border-t"
+                          style={{ borderColor: 'var(--border-subtle)' }}
+                        >
+                          <Button size="sm" onClick={() => handleComplete(task)} className="w-full sm:w-auto">
                             {task.socialLink ? (
                               <>
                                 <Link2 size={14} />
@@ -397,11 +504,25 @@ export default function DailyTasks() {
                           შენ უკვე შეასრულე ეს დავალება
                         </div>
                       )}
+
+                      {isModel && iPenalized && (
+                        <div className="mt-4 flex items-center gap-2 text-sm text-red-500">
+                          <AlertTriangle size={16} />
+                          ვადა გავიდა — ქულები დაკლებულია
+                        </div>
+                      )}
+
+                      {isModel && expired && !iCompleted && !iPenalized && (
+                        <div className="mt-4 flex items-center gap-2 text-sm text-amber-600">
+                          <Clock size={16} />
+                          ვადა გავიდა
+                        </div>
+                      )}
                     </div>
 
-                    {canAward && (pending.length > 0 || done.length > 0) && (
+                    {canAward && (pending.length > 0 || done.length > 0 || penalties.length > 0) && (
                       <div
-                        className="px-5 py-4 border-t space-y-3"
+                        className="px-4 sm:px-5 py-4 border-t space-y-3"
                         style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-hover)' }}
                       >
                         <p className="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">
@@ -436,7 +557,7 @@ export default function DailyTasks() {
                                   </div>
                                 </div>
 
-                                <div className="flex items-center gap-2 shrink-0">
+                                <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto">
                                   <input
                                     type="number"
                                     min="0"
@@ -454,6 +575,7 @@ export default function DailyTasks() {
                                     size="sm"
                                     disabled={awardingId === c.id}
                                     onClick={() => handleAward(c, task.pointsReward)}
+                                    className="flex-1 sm:flex-none"
                                   >
                                     <Star size={14} />
                                     {awardingId === c.id ? '...' : 'ქულა'}
@@ -481,9 +603,38 @@ export default function DailyTasks() {
                                     {model?.name || c.modelId}
                                   </p>
                                 </div>
-                                <span className="text-xs font-bold text-emerald-500 flex items-center gap-1">
+                                <span className="text-xs font-bold text-emerald-500 flex items-center gap-1 shrink-0">
                                   <CheckCircle2 size={12} />
                                   +{c.pointsAwarded} ქულა
+                                </span>
+                              </div>
+                            )
+                          })}
+
+                          {penalties.map((p) => {
+                            const model = models.find((m) => m.id === p.modelId)
+                            return (
+                              <div
+                                key={p.id}
+                                className="flex items-center gap-3 p-3 rounded-xl opacity-80"
+                              >
+                                <ModelAvatar
+                                  src={model?.avatar}
+                                  name={model?.name}
+                                  size="xs"
+                                  className="!rounded-lg shrink-0"
+                                />
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm text-[var(--text-primary)] truncate">
+                                    {model?.name || p.modelId}
+                                  </p>
+                                  <p className="text-[10px] text-red-400 flex items-center gap-1 mt-0.5">
+                                    <AlertTriangle size={9} />
+                                    ვადა გავიდა
+                                  </p>
+                                </div>
+                                <span className="text-xs font-bold text-red-500 flex items-center gap-1 shrink-0">
+                                  −{p.pointsDeducted} ქულა
                                 </span>
                               </div>
                             )

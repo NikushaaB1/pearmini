@@ -5,7 +5,7 @@ import { Navigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 
 import {
-  Shield, Plus, Minus, Download, Trash2, Pin, Megaphone, Activity, Award, Image as ImageIcon, Edit2, MessageSquare, Sparkles
+  Shield, Plus, Minus, Download, Trash2, Pin, Megaphone, Activity, Award, Image as ImageIcon, Edit2, MessageSquare, Sparkles, Music
 } from 'lucide-react'
 import { createChallenge, rewardWinner, deleteChallenge, updateChallenge } from '../services/challengesService'
 import { deleteDesign } from '../services/designsService'
@@ -20,6 +20,8 @@ import { FadeInContainer, FadeInItem } from '../components/animations/FadeIn'
 import Card from '../components/ui/Card'
 
 import Button from '../components/ui/Button'
+
+import PageHeader from '../components/ui/PageHeader'
 
 import Modal from '../components/ui/Modal'
 
@@ -50,6 +52,11 @@ import {
   saveShineSpotlight,
   DEFAULT_SHINE_SPOTLIGHT,
 } from '../services/shineSpotlightService'
+import {
+  subscribeToBgMusic,
+  saveBgMusic,
+  DEFAULT_BG_MUSIC,
+} from '../services/musicService'
 import defaultBillboard from '../assets/pear-billboard.png'
 
 
@@ -106,6 +113,11 @@ export default function Admin() {
   const [spotlightSaving, setSpotlightSaving] = useState(false)
   const spotlightImageInputRef = useRef(null)
 
+  const [musicEnabled, setMusicEnabled] = useState(DEFAULT_BG_MUSIC.enabled)
+  const [musicUrl, setMusicUrl] = useState(DEFAULT_BG_MUSIC.url)
+  const [musicVolume, setMusicVolume] = useState(String(DEFAULT_BG_MUSIC.volume))
+  const [musicSaving, setMusicSaving] = useState(false)
+
 
 
   useEffect(() => {
@@ -140,6 +152,14 @@ export default function Admin() {
       setSpotlightDescription(config.description)
       setSpotlightImageUrl(config.imageUrl || '')
       setSpotlightImagePreview(config.imageUrl || '')
+    })
+  }, [])
+
+  useEffect(() => {
+    return subscribeToBgMusic((config) => {
+      setMusicEnabled(config.enabled)
+      setMusicUrl(config.url || '')
+      setMusicVolume(String(config.volume ?? DEFAULT_BG_MUSIC.volume))
     })
   }, [])
 
@@ -217,6 +237,27 @@ export default function Admin() {
       toast.error(err.message || 'შენახვა ვერ მოხერხდა')
     } finally {
       setSpotlightSaving(false)
+    }
+  }
+
+  const handleSaveMusic = async () => {
+    if (!musicUrl.trim()) {
+      toast.error('მუსიკის ლინკი აუცილებელია')
+      return
+    }
+    const vol = Math.min(1, Math.max(0, Number(musicVolume) || 0.5))
+    setMusicSaving(true)
+    try {
+      await saveBgMusic({
+        enabled: musicEnabled,
+        url: musicUrl.trim(),
+        volume: vol,
+      })
+      toast.success('მუსიკა შენახულია SQL-ში')
+    } catch (err) {
+      toast.error(err.message || 'შენახვა ვერ მოხერხდა')
+    } finally {
+      setMusicSaving(false)
     }
   }
 
@@ -323,6 +364,8 @@ export default function Admin() {
 
     { id: 'spotlight', label: 'კამპანია', icon: Sparkles },
 
+    { id: 'music', label: 'მუსიკა', icon: Music },
+
     { id: 'challenges', label: 'გამოწვევები & დიზაინი', icon: Award },
 
     { id: 'sms', label: 'SMS გამოგზავნა', icon: MessageSquare },
@@ -344,19 +387,12 @@ export default function Admin() {
 
         <FadeInItem>
 
-          <div className="mb-8">
-
-            <h1 className="text-4xl font-semibold tracking-tight flex items-center gap-3 text-[var(--text-primary)]">
-
-              <Shield />
-
-              ადმინ პანელი
-
-            </h1>
-
-            <p className="text-[var(--text-muted)] mt-2 text-lg">PEAR™ Elite სრული მართვის ცენტრი</p>
-
-          </div>
+          <PageHeader
+            eyebrow="მართვა"
+            icon={Shield}
+            title="ადმინ პანელი"
+            subtitle="PEAR™ Elite სრული მართვის ცენტრი"
+          />
 
         </FadeInItem>
 
@@ -364,7 +400,7 @@ export default function Admin() {
 
         <FadeInItem>
 
-          <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
+          <div className="elite-tabs mb-6 max-w-full">
 
             {tabs.map((tab) => (
 
@@ -374,17 +410,7 @@ export default function Admin() {
 
                 onClick={() => setActiveTab(tab.id)}
 
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all ${
-
-                  activeTab === tab.id
-
-                    ? 'nav-link-active'
-
-                    : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] border'
-
-                }`}
-
-                style={activeTab !== tab.id ? { borderColor: 'var(--border-subtle)' } : undefined}
+                className={`elite-tab ${activeTab === tab.id ? 'elite-tab--active' : ''}`}
 
               >
 
@@ -1167,6 +1193,179 @@ export default function Admin() {
                   </p>
 
                 </div>
+
+              </Card>
+
+            </div>
+
+          </FadeInItem>
+
+        )}
+
+
+
+        {activeTab === 'music' && (
+
+          <FadeInItem>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+              <Card hover={false}>
+
+                <h3 className="section-title">
+
+                  <span className="section-title-icon">
+
+                    <Music size={14} />
+
+                  </span>
+
+                  ფონური მუსიკა
+
+                </h3>
+
+                <p className="section-subtitle">
+
+                  ლინკი ინახება settings.bg_music-ში — ყველა მომხმარებელს ერთი პლეერი ჩანს
+
+                </p>
+
+                <div className="space-y-4">
+
+                  <label className="flex items-center justify-between gap-4 p-4 rounded-xl border cursor-pointer" style={{ borderColor: 'var(--border-subtle)' }}>
+
+                    <div>
+
+                      <p className="text-sm font-medium text-[var(--text-primary)]">მუსიკის ჩართვა</p>
+
+                      <p className="text-xs text-[var(--text-muted)] mt-0.5">გამორთვისას პლეერი არ იმუშავებს</p>
+
+                    </div>
+
+                    <button
+
+                      type="button"
+
+                      role="switch"
+
+                      aria-checked={musicEnabled}
+
+                      onClick={() => setMusicEnabled((v) => !v)}
+
+                      className="relative w-11 h-6 rounded-full transition-colors shrink-0"
+
+                      style={{ background: musicEnabled ? 'var(--accent)' : 'var(--toggle-bg)' }}
+
+                    >
+
+                      <span
+
+                        className="absolute top-0.5 left-0.5 w-5 h-5 rounded-full transition-transform"
+
+                        style={{
+
+                          background: 'var(--toggle-knob)',
+
+                          transform: musicEnabled ? 'translateX(1.25rem)' : 'translateX(0)',
+
+                        }}
+
+                      />
+
+                    </button>
+
+                  </label>
+
+                  <div>
+
+                    <label className="elite-input-label">YouTube ან MP3 ლინკი</label>
+
+                    <input
+
+                      type="url"
+
+                      value={musicUrl}
+
+                      onChange={(e) => setMusicUrl(e.target.value)}
+
+                      placeholder="https://youtu.be/CDG_y0nR3Qg"
+
+                      className="elite-input"
+
+                    />
+
+                    <p className="text-[10px] text-[var(--text-muted)] mt-1">
+
+                      მხარდაჭერილი: youtu.be, youtube.com, music.youtube.com, MP3
+
+                    </p>
+
+                  </div>
+
+                  <div>
+
+                    <label className="elite-input-label">ნაგულისხმევი ხმა (0–1)</label>
+
+                    <input
+
+                      type="number"
+
+                      min="0"
+
+                      max="1"
+
+                      step="0.1"
+
+                      value={musicVolume}
+
+                      onChange={(e) => setMusicVolume(e.target.value)}
+
+                      className="elite-input w-32"
+
+                    />
+
+                  </div>
+
+                  <Button onClick={handleSaveMusic} disabled={musicSaving} className="w-full">
+
+                    {musicSaving ? 'ინახება...' : 'შენახვა SQL-ში'}
+
+                  </Button>
+
+                </div>
+
+              </Card>
+
+              <Card hover={false}>
+
+                <h3 className="font-semibold mb-4 text-[var(--text-primary)]">SQL მაგალითი</h3>
+
+                <pre
+
+                  className="text-[10px] sm:text-xs p-4 rounded-xl overflow-x-auto leading-relaxed"
+
+                  style={{ background: 'var(--bg-hover)', color: 'var(--text-muted)' }}
+
+                >
+
+{`insert into public.settings (key, value)
+values (
+  'bg_music',
+  '{"url":"https://youtu.be/CDG_y0nR3Qg",
+    "volume":0.5,"enabled":true}'::jsonb,
+  now()
+)
+on conflict (key) do update
+set value = excluded.value,
+    updated_at = now();`}
+
+                </pre>
+
+                <p className="text-xs text-[var(--text-muted)] mt-4">
+
+                  ან გაუშვი migration: <strong>20260623_bg_music_settings.sql</strong>
+
+                </p>
 
               </Card>
 

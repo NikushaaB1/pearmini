@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { MessageCircle, Send, Shield, Sparkles, Trash2, Users, Lightbulb, Heart } from 'lucide-react'
+import { MessageCircle, Send, Shield, Trash2, Users, Lightbulb, Heart } from 'lucide-react'
 import toast from 'react-hot-toast'
 import PageTransition from '../components/animations/PageTransition'
 import { FadeInContainer, FadeInItem } from '../components/animations/FadeIn'
+import PageHeader from '../components/ui/PageHeader'
 import ModelAvatar from '../components/ui/ModelAvatar'
 import EmojiPicker from '../components/ui/EmojiPicker'
 import { useUserStore } from '../store/useUserStore'
@@ -196,49 +197,37 @@ export default function Chat() {
     <PageTransition>
       <FadeInContainer>
         <FadeInItem>
-          <div className="mb-5 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-            <div>
-              <div className="flex items-center gap-2 text-[var(--accent)] text-xs uppercase tracking-[0.2em] mb-2">
-                <Sparkles size={12} />
-                PEAR™ Elite
+          <PageHeader
+            eyebrow="PEAR™ Elite"
+            icon={MessageCircle}
+            title="ჩატი"
+            subtitle="ელეგანტური საერთო სივრცე ყველასთვის"
+            action={
+              <div className="elite-stat">
+                <span className="elite-stat-label">
+                  <Users size={12} />
+                  მონაწილეები
+                </span>
+                <span className="elite-stat-value text-base">
+                  {sortedMessages.length > 0 ? participantCount : '—'}
+                </span>
               </div>
-              <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight flex items-center gap-3 text-[var(--text-primary)]">
-                <MessageCircle size={30} strokeWidth={1.5} />
-                ჩატი
-              </h1>
-              <p className="text-[var(--text-muted)] mt-1.5">ელეგანტური საერთო სივრცე ყველასთვის</p>
-            </div>
-            <div
-              className="flex items-center gap-3 px-4 py-2.5 rounded-2xl text-sm surface-glass"
-            >
-              <Users size={16} className="text-[var(--accent)]" />
-              <span className="text-[var(--text-muted)]">
-                {sortedMessages.length > 0 ? `${participantCount} მონაწილე` : 'დაიწყე საუბარი'}
-              </span>
-            </div>
-          </div>
+            }
+          />
         </FadeInItem>
 
         <FadeInItem>
           {/* Mobile Tab Toggle */}
-          <div className="lg:hidden flex gap-2 mb-4">
+          <div className="lg:hidden elite-tabs mb-4">
             <button
               onClick={() => setActiveTab('chat')}
-              className={`flex-1 py-2.5 rounded-xl font-semibold text-xs uppercase tracking-wider transition-all border ${
-                activeTab === 'chat'
-                  ? 'nav-link-active border-[var(--accent-soft)]'
-                  : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] border-transparent bg-[var(--bg-hover)]'
-              }`}
+              className={`elite-tab flex-1 justify-center ${activeTab === 'chat' ? 'elite-tab--active' : ''}`}
             >
               ჩატი
             </button>
             <button
               onClick={() => setActiveTab('ideas')}
-              className={`flex-1 py-2.5 rounded-xl font-semibold text-xs uppercase tracking-wider transition-all border ${
-                activeTab === 'ideas'
-                  ? 'nav-link-active border-[var(--accent-soft)]'
-                  : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] border-transparent bg-[var(--bg-hover)]'
-              }`}
+              className={`elite-tab flex-1 justify-center ${activeTab === 'ideas' ? 'elite-tab--active' : ''}`}
             >
               იდეები ({ideas.length})
             </button>
@@ -308,15 +297,12 @@ export default function Chat() {
                     <p className="text-sm text-[var(--text-muted)]">იტვირთება...</p>
                   </div>
                 ) : sortedMessages.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center h-full text-center px-6">
-                    <div
-                      className="w-16 h-16 rounded-3xl flex items-center justify-center mb-4"
-                      style={{ background: 'var(--accent-soft)' }}
-                    >
-                      <MessageCircle size={28} className="text-[var(--accent)]" />
+                  <div className="empty-state h-full border-0 bg-transparent">
+                    <div className="empty-state-icon">
+                      <MessageCircle size={26} />
                     </div>
-                    <p className="font-medium text-[var(--text-primary)]">ჯერ ცარიელია</p>
-                    <p className="text-sm text-[var(--text-muted)] mt-1 max-w-xs">
+                    <p className="empty-state-title">ჯერ ცარიელია</p>
+                    <p className="empty-state-desc">
                       მოესალმე გუნდს — პირველი შეტყობინება შენ გაქვს!
                     </p>
                   </div>
@@ -502,15 +488,12 @@ export default function Chat() {
                 }}
               >
                 {ideas.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center h-full text-center px-4 py-8">
-                    <div
-                      className="w-12 h-12 rounded-2xl flex items-center justify-center mb-3 text-[var(--accent)]"
-                      style={{ background: 'var(--accent-soft)' }}
-                    >
-                      <Lightbulb size={22} />
+                  <div className="empty-state h-full border-0 bg-transparent">
+                    <div className="empty-state-icon">
+                      <Lightbulb size={24} />
                     </div>
-                    <p className="text-xs font-semibold text-[var(--text-primary)]">ჯერ არ არის იდეები</p>
-                    <p className="text-[11px] text-[var(--text-muted)] mt-1 max-w-xs">
+                    <p className="empty-state-title">ჯერ არ არის იდეები</p>
+                    <p className="empty-state-desc">
                       გახდი პირველი! დაწერე შენი კრეატიული იდეა ბრენდისთვის ქვემოთ.
                     </p>
                   </div>
