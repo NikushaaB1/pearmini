@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Eye, EyeOff } from 'lucide-react'
 import toast from 'react-hot-toast'
@@ -14,6 +14,7 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
+  const location = useLocation()
   const { setUser, triggerSplash } = useUserStore()
 
   const handleSubmit = async (e) => {
@@ -24,7 +25,12 @@ export default function Login() {
       setUser(profile, profile.role, profile.modelId)
       triggerSplash()
       toast.success(`კეთილი იყოს დაბრუნება${profile.displayName ? `, ${profile.displayName}` : ''}`)
-      navigate('/dashboard', { state: { showCampaignAd: true } })
+      const returnTo = location.state?.returnTo
+      if (returnTo && typeof returnTo === 'string' && returnTo.startsWith('/')) {
+        navigate(returnTo, { replace: true })
+      } else {
+        navigate('/dashboard', { state: { showCampaignAd: true } })
+      }
     } catch (err) {
       const invalidCreds =
         err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password'

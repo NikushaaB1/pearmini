@@ -542,6 +542,8 @@ create table if not exists public.daily_task_completions (
   completed_at timestamptz not null default now(),
   points_awarded integer check (points_awarded is null or points_awarded >= 0),
   awarded_by text,
+  submission_urls jsonb not null default '[]'::jsonb,
+  submission_note text,
   unique (task_id, model_id)
 );
 create index if not exists daily_task_completions_task_id_idx on public.daily_task_completions (task_id);

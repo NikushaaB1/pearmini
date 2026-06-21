@@ -9,7 +9,7 @@ import {
 } from 'lucide-react'
 import { createChallenge, rewardWinner, deleteChallenge, updateChallenge } from '../services/challengesService'
 import { deleteDesign } from '../services/designsService'
-import { sendSMS, getSMSHistory } from '../services/smsService'
+import { sendSMS, getSMSHistory, buildDailyTaskCompleteLink, appendTaskLinkToMessage } from '../services/smsService'
 
 import toast from 'react-hot-toast'
 
@@ -67,7 +67,7 @@ export default function Admin() {
 
     togglePinAnnouncement, deleteAnnouncement, announcements, activityLog,
 
-    models, removeModel, updateModel, challenges, designs } = useUserStore()
+    models, removeModel, updateModel, challenges, designs, dailyTasks } = useUserStore()
 
 
 
@@ -102,6 +102,9 @@ export default function Admin() {
   const [smsMessage, setSmsMessage] = useState('')
   const [smsSending, setSmsSending] = useState(false)
   const [smsHistory, setSmsHistory] = useState([])
+  const [smsTaskId, setSmsTaskId] = useState('')
+  const [smsModelId, setSmsModelId] = useState('')
+  const [smsIncludeLink, setSmsIncludeLink] = useState(true)
   const [cvList, setCvList] = useState([])
 
   const [spotlightEnabled, setSpotlightEnabled] = useState(DEFAULT_SHINE_SPOTLIGHT.enabled)
@@ -1626,12 +1629,27 @@ set value = excluded.value,
                       toast.error('ტელეფონი და შეტყობინება აუცილებელია')
                       return
                     }
+                    if (smsIncludeLink && !smsTaskId) {
+                      toast.error('აირჩიე დავალება SMS ლინკისთვის')
+                      return
+                    }
                     setSmsSending(true)
                     try {
-                      await sendSMS(smsPhone, smsMessage, 'მოდელი')
+                      const model = models.find((m) => m.id === smsModelId)
+                      let finalMessage = smsMessage.trim()
+                      if (smsIncludeLink && smsTaskId) {
+                        finalMessage = appendTaskLinkToMessage(finalMessage, smsTaskId)
+                      }
+                      await sendSMS(
+                        smsPhone,
+                        finalMessage,
+                        model?.name || 'მოდელი'
+                      )
                       toast.success('SMS გაგზავნილია!')
                       setSmsPhone('')
                       setSmsMessage('')
+                      setSmsTaskId('')
+                      setSmsModelId('')
                       setSmsHistory(getSMSHistory())
                     } catch (err) {
                       toast.error(err.message || 'გაგზავნა ვერ მოხერხდა')
@@ -1641,6 +1659,64 @@ set value = excluded.value,
                   }}
                   className="space-y-4"
                 >
+                  <div>
+                    <label className="text-sm font-medium text-[var(--text-muted)] mb-2 block">
+                      მოდელი (არასავალდებულო)
+                    </label>
+                    <select
+                      value={smsModelId}
+                      onChange={(e) => {
+                        const id = e.target.value
+                        setSmsModelId(id)
+                        const m = models.find((x) => x.id === id)
+                        if (m?.phone_number) setSmsPhone(m.phone_number)
+                      }}
+                      className="admin-input"
+                    >
+                      <option value="">— აირჩიე მოდელი —</option>
+                      {models.map((m) => (
+                        <option key={m.id} value={m.id}>
+                          {m.name} {m.phone_number ? `(${m.phone_number})` : ''}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium text-[var(--text-muted)] mb-2 block">
+                      დავალება SMS ლინკით
+                    </label>
+                    <select
+                      value={smsTaskId}
+                      onChange={(e) => setSmsTaskId(e.target.value)}
+                      className="admin-input"
+                    >
+                      <option value="">— აირჩიე დავალება —</option>
+                      {dailyTasks
+                        .filter((t) => t.taskDate === new Date().toISOString().slice(0, 10))
+                        .map((t) => (
+                          <option key={t.id} value={t.id}>
+                            {t.title} (+{t.pointsReward} ქულა)
+                          </option>
+                        ))}
+                    </select>
+                    {smsTaskId && (
+                      <p className="text-[10px] text-[var(--text-muted)] mt-1 break-all">
+                        ლინკი: {buildDailyTaskCompleteLink(smsTaskId)}
+                      </p>
+                    )}
+                  </div>
+
+                  <label className="flex items-center gap-2 text-sm text-[var(--text-muted)] cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={smsIncludeLink}
+                      onChange={(e) => setSmsIncludeLink(e.target.checked)}
+                      className="rounded"
+                    />
+                    SMS-ში დავალების ლინკი (დაჭერისას ავტომატური შესრულება)
+                  </label>
+
                   <div>
                     <label className="text-sm font-medium text-[var(--text-muted)] mb-2 block">
                       მოდელის ტელეფონი
@@ -1661,13 +1737,13 @@ set value = excluded.value,
                     <textarea
                       value={smsMessage}
                       onChange={(e) => setSmsMessage(e.target.value)}
-                      placeholder="დაწერე SMS ტექსტი..."
+                      placeholder="მაგ: ახალი დავალებაა! დააჭირე ლინკს და შესრულე..."
                       rows={5}
                       className="admin-input resize-none"
-                      maxLength="160"
+                      maxLength={500}
                     />
                     <p className="text-[10px] text-[var(--text-muted)] mt-1">
-                      {smsMessage.length}/160 სიმბოლო
+                      {smsMessage.length}/500 · ლინკი SMS-ში ავტომატურად ემატება
                     </p>
                   </div>
 

@@ -84,6 +84,18 @@ function rowToPenalty(row) {
 }
 
 function rowToCompletion(row) {
+  const rawUrls = row.submission_urls ?? row.submissionUrls
+  let submissionUrls = []
+  if (Array.isArray(rawUrls)) {
+    submissionUrls = rawUrls
+  } else if (typeof rawUrls === 'string') {
+    try {
+      submissionUrls = JSON.parse(rawUrls)
+    } catch {
+      submissionUrls = []
+    }
+  }
+
   return {
     id: row.id,
     taskId: row.task_id ?? row.taskId,
@@ -92,6 +104,8 @@ function rowToCompletion(row) {
     completedAt: row.completed_at ?? row.completedAt,
     pointsAwarded: row.points_awarded ?? row.pointsAwarded ?? null,
     awardedBy: row.awarded_by ?? row.awardedBy ?? null,
+    submissionUrls,
+    submissionNote: row.submission_note ?? row.submissionNote ?? null,
   }
 }
 
@@ -254,8 +268,19 @@ export async function deleteDailyTask(taskId) {
   if (error) throw error
 }
 
-export async function submitTaskCompletion({ taskId, modelId }) {
+export async function submitTaskCompletion({
+  taskId,
+  modelId,
+  submissionUrls = [],
+  submissionNote = null,
+}) {
   if (!taskId || !modelId) throw new Error('მონაცემები არასრულია')
+
+  const normalizedUrls = Array.isArray(submissionUrls)
+    ? submissionUrls.filter((u) => u?.url)
+    : []
+  const trimmedNote =
+    typeof submissionNote === 'string' ? submissionNote.trim() : ''
 
   const existing = getLocalCompletions().find(
     (c) => (c.task_id ?? c.taskId) === taskId && (c.model_id ?? c.modelId) === modelId
@@ -271,6 +296,8 @@ export async function submitTaskCompletion({ taskId, modelId }) {
     completed_at: new Date().toISOString(),
     points_awarded: null,
     awarded_by: null,
+    submission_urls: normalizedUrls,
+    submission_note: trimmedNote || null,
   }
 
   if (!isConfigured || !supabase) {

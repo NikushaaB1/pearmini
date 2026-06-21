@@ -4,6 +4,26 @@ import { useUserStore } from '../store/useUserStore'
 
 const SMS_STORE_KEY = 'pear_sms_messages'
 
+/** SMS ლინკი — დაჭერისას დავალება ავტომატურად შესრულდება */
+export function buildDailyTaskCompleteLink(taskId) {
+  if (!taskId) return ''
+  const origin =
+    typeof window !== 'undefined' && window.location?.origin
+      ? window.location.origin
+      : ''
+  const path = `/daily-tasks?complete=${encodeURIComponent(taskId)}`
+  return origin ? `${origin}${path}` : path
+}
+
+export function appendTaskLinkToMessage(message, taskId) {
+  const link = buildDailyTaskCompleteLink(taskId)
+  if (!link) return message?.trim() || ''
+  const base = (message || '').trim()
+  if (base.includes(link)) return base
+  const suffix = base ? `\n${link}` : link
+  return `${base}${suffix}`.trim()
+}
+
 function getLocalSMS() {
   const data = localStorage.getItem(SMS_STORE_KEY)
   return data ? JSON.parse(data) : []

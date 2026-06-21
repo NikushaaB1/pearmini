@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react'
-import { Navigate } from 'react-router-dom'
+import { Navigate, useLocation, useSearchParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   ListChecks,
@@ -12,6 +12,8 @@ import {
   Crown,
   Link2,
   AlertTriangle,
+  Upload,
+  MessageSquare,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import PageTransition from '../components/animations/PageTransition'
@@ -21,6 +23,8 @@ import Button from '../components/ui/Button'
 import ModelAvatar from '../components/ui/ModelAvatar'
 import PageHeader from '../components/ui/PageHeader'
 import TaskTimer, { isTaskExpired } from '../components/ui/TaskTimer'
+import TaskSubmissionZone from '../components/ui/TaskSubmissionZone'
+import { uploadImage } from '../services/storage'
 import { useUserStore } from '../store/useUserStore'
 import {
   canAssignDailyTaskPoints,
@@ -86,6 +90,10 @@ function TaskPenaltyWatcher({ taskId, modelId, expiresAt, completed, penalized }
 }
 
 export default function DailyTasks() {
+  const location = useLocation()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const smsAutoCompleteRef = useRef(false)
+
   const { user, role, modelId, models, dailyTasks, dailyTaskCompletions, dailyTaskPenalties } =
     useUserStore()
 
@@ -99,6 +107,9 @@ export default function DailyTasks() {
   const [creating, setCreating] = useState(false)
   const [customPoints, setCustomPoints] = useState({})
   const [awardingId, setAwardingId] = useState(null)
+  const [taskFiles, setTaskFiles] = useState({})
+  const [taskNotes, setTaskNotes] = useState({})
+  const [submittingTaskId, setSubmittingTaskId] = useState(null)
 
   const isAdmin = canCreateDailyTasks(role)
   const canAward = canAssignDailyTaskPoints(role, user)
@@ -142,6 +153,47 @@ export default function DailyTasks() {
     )
   }, [dailyTaskPenalties, modelId])
 
+  const incompleteTasks = useMemo(() => {
+    if (!isModel) return []
+    return tasksForDate.filter(
+      (t) =>
+        !myCompletions.has(t.id) &&
+        !myPenalties.has(t.id) &&
+        !isTaskExpired(t.expiresAt)
+    )
+  }, [isModel, tasksForDate, myCompletions, myPenalties])
+
+  // SMS ლინკიდან ავტომატური შესრულება (?complete=taskId)
+  useEffect(() => {
+    const completeId = searchParams.get('complete') || searchParams.get('c')
+    if (!completeId || !modelId || smsAutoCompleteRef.current) return
+
+    const task = dailyTasks.find((t) => t.id === completeId)
+    if (!task) return
+
+    smsAutoCompleteRef.current = true
+
+    if (task.taskDate !== filterDate) setFilterDate(task.taskDate)
+
+    if (myCompletions.has(completeId)) {
+      toast.success('ამ დავალება უკვე შესრულებულია')
+      setSearchParams({}, { replace: true })
+      return
+    }
+
+    if (isTaskExpired(task.expiresAt)) {
+      toast.error('ვადა უკვე გავიდა')
+      setSearchParams({}, { replace: true })
+      return
+    }
+
+    toast('ატვირთე შესრულება ქვემოთ მოცემულ box-ში', { icon: '📎' })
+    setSearchParams({}, { replace: true })
+    setTimeout(() => {
+      document.getElementById('task-completion-box')?.scrollIntoView({ behavior: 'smooth' })
+    }, 400)
+  }, [searchParams, modelId, dailyTasks, myCompletions, filterDate, setSearchParams])
+
   const handleCreate = async (e) => {
     e.preventDefault()
     if (!title.trim()) return toast.error('სათაური აუცილებელია')
@@ -180,22 +232,49 @@ export default function DailyTasks() {
     }
   }
 
-  const handleComplete = async (task) => {
+  const handleComplete = async (task, files = taskFiles[task.id] || []) => {
     if (!modelId) return toast.error('მოდელის პროფილი ვერ მოიძებნა')
     if (isTaskExpired(task.expiresAt)) {
       return toast.error('ვადა უკვე გავიდა — დავალება ვერ შესრულდება')
     }
 
+    const note = (taskNotes[task.id] || '').trim()
+    if (!files.length && !note) {
+      return toast.error('ატვირთე ფოტო/სქრინი ან დაწერე ტექსტი')
+    }
+
+    setSubmittingTaskId(task.id)
     try {
-      await submitTaskCompletion({ taskId: task.id, modelId })
+      const submissionUrls = []
+      for (const file of files) {
+        const uploaded = await uploadImage(
+          file,
+          modelId,
+          `task_submissions/${task.id}`
+        )
+        submissionUrls.push({ url: uploaded.url, name: uploaded.name })
+      }
+
+      await submitTaskCompletion({
+        taskId: task.id,
+        modelId,
+        submissionUrls,
+        submissionNote: note,
+      })
+
+      setTaskFiles((prev) => ({ ...prev, [task.id]: [] }))
+      setTaskNotes((prev) => ({ ...prev, [task.id]: '' }))
+
       if (task.socialLink) {
         window.open(task.socialLink, '_blank', 'noopener,noreferrer')
-        toast.success('დავალება მონიშნულია — გადაგიყვანთ სოცქსელში')
+        toast.success('ატვირთულია და მონიშნულია — გადაგიყვანთ სოცქსელში')
       } else {
-        toast.success('დავალება მონიშნულია შესრულებულად')
+        toast.success('დავალება ატვირთულია და შესრულებულად მონიშნულია')
       }
     } catch (err) {
       toast.error(err.message || 'შესრულება ვერ მოხერხდა')
+    } finally {
+      setSubmittingTaskId(null)
     }
   }
 
@@ -231,7 +310,15 @@ export default function DailyTasks() {
     [modelId, myCompletions, myPenalties]
   )
 
-  if (!user) return <Navigate to="/login" replace />
+  if (!user) {
+    return (
+      <Navigate
+        to="/login"
+        replace
+        state={{ returnTo: location.pathname + location.search }}
+      />
+    )
+  }
 
   return (
     <PageTransition>
@@ -477,27 +564,6 @@ export default function DailyTasks() {
                         )}
                       </div>
 
-                      {isModel && !iCompleted && !iPenalized && !expired && (
-                        <div
-                          className="mt-4 pt-4 border-t"
-                          style={{ borderColor: 'var(--border-subtle)' }}
-                        >
-                          <Button size="sm" onClick={() => handleComplete(task)} className="w-full sm:w-auto">
-                            {task.socialLink ? (
-                              <>
-                                <Link2 size={14} />
-                                დასრულება და გადასვლა
-                              </>
-                            ) : (
-                              <>
-                                <CheckCircle2 size={14} />
-                                შესრულებულად მონიშვნა
-                              </>
-                            )}
-                          </Button>
-                        </div>
-                      )}
-
                       {isModel && iCompleted && (
                         <div className="mt-4 flex items-center gap-2 text-sm text-emerald-500">
                           <CheckCircle2 size={16} />
@@ -553,7 +619,43 @@ export default function DailyTasks() {
                                     <p className="text-[10px] text-[var(--text-muted)] flex items-center gap-1 mt-0.5">
                                       <Clock size={9} />
                                       მოლოდინში
+                                      {c.submissionUrls?.length > 0 && (
+                                        <span className="text-[var(--accent)]">
+                                          · {c.submissionUrls.length} ფაილი
+                                        </span>
+                                      )}
+                                      {c.submissionNote && (
+                                        <span className="text-[var(--accent)]">· ტექსტი</span>
+                                      )}
                                     </p>
+                                    {c.submissionNote && (
+                                      <p
+                                        className="text-xs text-[var(--text-muted)] mt-1.5 break-words line-clamp-3"
+                                        title={c.submissionNote}
+                                      >
+                                        {c.submissionNote}
+                                      </p>
+                                    )}
+                                    {c.submissionUrls?.length > 0 && (
+                                      <div className="flex gap-1.5 mt-2 flex-wrap">
+                                        {c.submissionUrls.map((sub, idx) => (
+                                          <a
+                                            key={idx}
+                                            href={sub.url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="block w-12 h-12 rounded-lg overflow-hidden border shrink-0"
+                                            style={{ borderColor: 'var(--border-subtle)' }}
+                                          >
+                                            <img
+                                              src={sub.url}
+                                              alt={sub.name || 'submission'}
+                                              className="w-full h-full object-cover"
+                                            />
+                                          </a>
+                                        ))}
+                                      </div>
+                                    )}
                                   </div>
                                 </div>
 
@@ -602,6 +704,30 @@ export default function DailyTasks() {
                                   <p className="text-sm text-[var(--text-primary)] truncate">
                                     {model?.name || c.modelId}
                                   </p>
+                                  {c.submissionNote && (
+                                    <p className="text-[10px] text-[var(--text-muted)] mt-0.5 line-clamp-2">
+                                      {c.submissionNote}
+                                    </p>
+                                  )}
+                                  {c.submissionUrls?.length > 0 && (
+                                    <div className="flex gap-1 mt-1">
+                                      {c.submissionUrls.slice(0, 3).map((sub, idx) => (
+                                        <a
+                                          key={idx}
+                                          href={sub.url}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                        >
+                                          <img
+                                            src={sub.url}
+                                            alt=""
+                                            className="w-8 h-8 rounded object-cover border"
+                                            style={{ borderColor: 'var(--border-subtle)' }}
+                                          />
+                                        </a>
+                                      ))}
+                                    </div>
+                                  )}
                                 </div>
                                 <span className="text-xs font-bold text-emerald-500 flex items-center gap-1 shrink-0">
                                   <CheckCircle2 size={12} />
@@ -648,6 +774,113 @@ export default function DailyTasks() {
             </div>
           )}
         </FadeInItem>
+
+        {isModel && (
+          <FadeInItem>
+            <div
+              id="task-completion-box"
+              className="elite-panel elite-panel-glow mt-8 p-5 sm:p-6"
+            >
+              <div className="flex items-center gap-2 mb-2">
+                <CheckCircle2 size={20} className="text-[var(--accent)] shrink-0" />
+                <h2 className="section-title !mb-0">დავალების შესრულება</h2>
+              </div>
+              <p className="section-subtitle mb-5">
+                ატვირთე ფოტო/სქრინი ან დაწერე ტექსტი (ან ორივე), შემდეგ დააჭირე
+                „შესრულება“. SMS ლინკიდან შესვლისასაც აქ შეგიძლია გაგზავნა.
+              </p>
+
+              {incompleteTasks.length === 0 ? (
+                <div className="empty-state !py-8">
+                  <p className="empty-state-desc">
+                    ყველა დავალება შესრულებულია ან ვადა გავიდა
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {incompleteTasks.map((task) => (
+                    <div
+                      key={task.id}
+                      className="rounded-xl border p-4 space-y-4"
+                      style={{
+                        borderColor: 'var(--border-subtle)',
+                        background: 'var(--glass-bg-subtle)',
+                      }}
+                    >
+                      <div className="flex flex-wrap items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-[var(--text-primary)]">
+                            {task.title}
+                          </p>
+                          {task.description && (
+                            <p className="text-xs text-[var(--text-muted)] mt-1 line-clamp-2">
+                              {task.description}
+                            </p>
+                          )}
+                          <div className="flex flex-wrap items-center gap-2 mt-2">
+                            <span className="elite-chip">+{task.pointsReward} ქულა</span>
+                            <TaskTimer expiresAt={task.expiresAt} size="sm" />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div>
+                        <p className="elite-input-label mb-2 flex items-center gap-1">
+                          <MessageSquare size={12} />
+                          ტექსტი (არასავალდებულო)
+                        </p>
+                        <textarea
+                          value={taskNotes[task.id] || ''}
+                          onChange={(e) =>
+                            setTaskNotes((prev) => ({ ...prev, [task.id]: e.target.value }))
+                          }
+                          disabled={submittingTaskId === task.id}
+                          placeholder="მაგ: ლინკი, კომენტარი ან შესრულების აღწერა..."
+                          rows={3}
+                          className="elite-input resize-none"
+                        />
+                      </div>
+
+                      <div>
+                        <p className="elite-input-label mb-2 flex items-center gap-1">
+                          <Upload size={12} />
+                          ფოტო / სქრინი (არასავალდებულო)
+                        </p>
+                        <TaskSubmissionZone
+                          compact
+                          disabled={submittingTaskId === task.id}
+                          onFilesChange={(files) =>
+                            setTaskFiles((prev) => ({ ...prev, [task.id]: files }))
+                          }
+                        />
+                      </div>
+
+                      <Button
+                        size="sm"
+                        disabled={submittingTaskId === task.id}
+                        loading={submittingTaskId === task.id}
+                        onClick={() => handleComplete(task)}
+                        className="w-full sm:w-auto"
+                      >
+                        {task.socialLink ? (
+                          <>
+                            <Link2 size={14} />
+                            ატვირთვა, შესრულება და გადასვლა
+                          </>
+                        ) : (
+                          <>
+                            <CheckCircle2 size={14} />
+                            ატვირთვა და შესრულება
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </FadeInItem>
+        )}
       </FadeInContainer>
     </PageTransition>
   )
