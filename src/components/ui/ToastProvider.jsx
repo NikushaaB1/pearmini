@@ -20,8 +20,11 @@ export default function ToastProvider() {
           fontSize: '14px',
         },
         success: {
+          style: {
+            border: isDark ? '1px solid rgba(74, 222, 128, 0.25)' : '1px solid rgba(34, 197, 94, 0.25)',
+          },
           iconTheme: {
-            primary: isDark ? '#e8b896' : '#c4956a',
+            primary: isDark ? '#4ade80' : '#16a34a',
             secondary: isDark ? '#1a1816' : '#ffffff',
           },
         },

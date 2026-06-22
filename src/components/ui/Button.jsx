@@ -1,9 +1,11 @@
 import { motion } from 'framer-motion'
 
 const variants = {
-  primary: 'text-[#1a1008] hover:brightness-105 shadow-[var(--shadow-gold)]',
-  secondary: 'glass-morphism border hover:border-[var(--border-medium)]',
-  ghost: 'glass hover:opacity-90',
+  primary: 'text-white hover:brightness-105 shadow-[var(--shadow-gold)]',
+  secondary:
+    'border border-[var(--border-medium)] bg-[var(--glass-bg-subtle)] text-[var(--accent-bright)] hover:border-[var(--accent-bright)] hover:bg-[var(--accent-soft)] backdrop-blur-md',
+  ghost:
+    'border border-transparent bg-transparent text-[var(--text-muted)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]',
   danger: 'bg-red-500/15 text-red-500 border border-red-500/30 backdrop-blur-md',
   luxury: 'glass-morphism text-[var(--text-primary)] hover:brightness-105',
 }
@@ -19,21 +21,8 @@ export default function Button({
 }) {
   const variantStyle =
     variant === 'primary'
-      ? { background: 'var(--gradient-gold)', ...style }
-      : variant === 'secondary'
-        ? {
-            color: 'var(--accent-bright)',
-            ...style,
-          }
-        : variant === 'ghost'
-          ? {
-              background: 'var(--glass-bg-subtle)',
-              borderColor: 'var(--glass-border)',
-              color: 'var(--text-muted)',
-              backdropFilter: 'blur(16px)',
-              ...style,
-            }
-          : style
+      ? { background: 'var(--gradient-accent)', color: '#fff', ...style }
+      : style
 
   return (
     <motion.button

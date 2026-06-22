@@ -266,7 +266,7 @@ export default function Chat() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  <span className="w-2 h-2 rounded-full bg-[var(--accent-bright)] animate-pulse" />
                   <span className="text-[11px] text-[var(--text-muted)] hidden sm:inline">აქტიური</span>
                   {isAdminRole(role) && sortedMessages.length > 0 && (
                     <button

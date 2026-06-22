@@ -114,20 +114,16 @@ export default function NotificationHub() {
     })
   }
 
-  return (
-    <div className="fixed bottom-6 right-6 z-50 font-sans flex items-end justify-end">
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9, y: 100, x: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0, x: 0 }}
-            exit={{ opacity: 0, scale: 0.9, y: 100, x: 20 }}
-            className="w-80 h-[520px] rounded-[42px] border-[10px] border-neutral-900 shadow-2xl relative overflow-hidden flex flex-col"
-            style={{
-              background: '#0a0a0a',
-              boxShadow: '0 24px 60px rgba(0,0,0,0.5)',
-            }}
-          >
+  const phonePanel = (
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.88, y: 40 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.88, y: 40 }}
+          transition={{ type: 'spring', stiffness: 380, damping: 32 }}
+          className="app-phone-frame"
+        >
             {/* Screen Wallpaper */}
             <div className="absolute inset-0 bg-gradient-to-tr from-purple-950 via-slate-950 to-amber-950 opacity-90 z-0" />
             <div className="absolute inset-0 bg-black/20 z-0" />
@@ -216,27 +212,36 @@ export default function NotificationHub() {
           </motion.div>
         )}
       </AnimatePresence>
+  )
 
-      {!isOpen && (
-        <motion.button
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={handleOpen}
-          className="w-12 h-12 rounded-full flex items-center justify-center shadow-lg relative border"
-          style={{
-            background: 'var(--bg-card-solid)',
-            borderColor: 'var(--border-subtle)',
-            boxShadow: 'var(--shadow-card)',
-          }}
-        >
-          <Smartphone className="text-[var(--text-muted)]" size={18} />
-          {unreadCount > 0 && (
-            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] font-bold w-5 h-5 rounded-full flex items-center justify-center border-2 border-white animate-pulse">
-              {unreadCount}
-            </span>
-          )}
-        </motion.button>
+  const handleToggle = () => {
+    if (isOpen) {
+      setIsOpen(false)
+      return
+    }
+    handleOpen()
+  }
+
+  const fab = (
+    <motion.button
+      whileHover={{ scale: 1.08 }}
+      whileTap={{ scale: 0.95 }}
+      onClick={handleToggle}
+      className={`app-dock-btn ${isOpen ? 'app-dock-btn--active' : ''}`}
+      aria-label="შეტყობინებები"
+      aria-pressed={isOpen}
+    >
+      <Smartphone className={isOpen ? 'text-[var(--accent)]' : 'text-[var(--text-muted)]'} size={18} />
+      {unreadCount > 0 && (
+        <span className="app-dock-btn-badge">{unreadCount > 9 ? '9+' : unreadCount}</span>
       )}
+    </motion.button>
+  )
+
+  return (
+    <div className="app-phone-trigger font-sans flex items-end justify-end">
+      {phonePanel}
+      {fab}
     </div>
   )
 }

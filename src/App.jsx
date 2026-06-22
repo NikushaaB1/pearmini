@@ -19,6 +19,7 @@ import { subscribeToIdeas } from './services/ideasService'
 import { subscribeToDesigns } from './services/designsService'
 import { subscribeToChallenges } from './services/challengesService'
 import { subscribeToDailyTasks, subscribeToDailyTaskCompletions, subscribeToDailyTaskPenalties } from './services/dailyTasksService'
+import { subscribeToFeedPosts } from './services/feedPostsService'
 import { subscribeToBillboard } from './services/rewardsService'
 
 export default function App() {
@@ -128,6 +129,10 @@ export default function App() {
       useUserStore.getState().syncDailyTaskPenalties(remotePenalties ?? [])
     })
 
+    const unsubFeed = subscribeToFeedPosts((remotePosts) => {
+      useUserStore.getState().syncFeedPosts(remotePosts ?? [])
+    })
+
     const unsubBillboard = subscribeToBillboard((billboardModelId) => {
       useUserStore.getState().syncBillboardModelId(billboardModelId)
     })
@@ -144,6 +149,7 @@ export default function App() {
       unsubDailyTasks()
       unsubDailyCompletions()
       unsubDailyPenalties()
+      unsubFeed()
       unsubBillboard()
     }
   }, [user, setUserProfiles, syncPoints, syncAnnouncements, syncActivityLog])

@@ -22,6 +22,7 @@ import Card from '../components/ui/Card'
 import Button from '../components/ui/Button'
 import ModelAvatar from '../components/ui/ModelAvatar'
 import PageHeader from '../components/ui/PageHeader'
+import PageBreadcrumb from '../components/ui/PageBreadcrumb'
 import TaskTimer, { isTaskExpired } from '../components/ui/TaskTimer'
 import TaskSubmissionZone from '../components/ui/TaskSubmissionZone'
 import { uploadImage } from '../services/storage'
@@ -324,6 +325,9 @@ export default function DailyTasks() {
     <PageTransition>
       <FadeInContainer>
         <FadeInItem>
+          <PageBreadcrumb to="/dashboard" label="დაფა" />
+        </FadeInItem>
+        <FadeInItem>
           <PageHeader
             eyebrow="ყოველდღიური"
             icon={ListChecks}
@@ -489,12 +493,17 @@ export default function DailyTasks() {
                 const iCompleted = myCompletions.has(task.id)
                 const iPenalized = myPenalties.has(task.id)
                 const expired = isTaskExpired(task.expiresAt)
+                const taskStatusClass = iCompleted
+                  ? 'task-card--done'
+                  : iPenalized || expired
+                    ? 'task-card--expired'
+                    : 'task-card--active'
 
                 return (
                   <motion.div
                     key={task.id}
                     layout
-                    className="rounded-2xl overflow-hidden surface-glass"
+                    className={`rounded-2xl overflow-hidden surface-glass task-card ${taskStatusClass}`}
                   >
                     {isModel && (
                       <TaskPenaltyWatcher
@@ -516,6 +525,15 @@ export default function DailyTasks() {
                             <span className="elite-chip shrink-0">
                               +{task.pointsReward} ქულა
                             </span>
+                            {isModel && iCompleted && (
+                              <span className="status-chip status-chip--success">შესრულებული</span>
+                            )}
+                            {isModel && iPenalized && (
+                              <span className="status-chip status-chip--danger">ვადა გავიდა</span>
+                            )}
+                            {isModel && !iCompleted && !iPenalized && !expired && (
+                              <span className="status-chip status-chip--warning">აქტიური</span>
+                            )}
                             <TaskTimer
                               expiresAt={task.expiresAt}
                               size="sm"
@@ -565,7 +583,7 @@ export default function DailyTasks() {
                       </div>
 
                       {isModel && iCompleted && (
-                        <div className="mt-4 flex items-center gap-2 text-sm text-emerald-500">
+                        <div className="mt-4 flex items-center gap-2 text-sm text-[var(--accent-bright)]">
                           <CheckCircle2 size={16} />
                           შენ უკვე შეასრულე ეს დავალება
                         </div>
@@ -729,7 +747,7 @@ export default function DailyTasks() {
                                     </div>
                                   )}
                                 </div>
-                                <span className="text-xs font-bold text-emerald-500 flex items-center gap-1 shrink-0">
+                                <span className="text-xs font-bold text-[var(--accent-bright)] flex items-center gap-1 shrink-0">
                                   <CheckCircle2 size={12} />
                                   +{c.pointsAwarded} ქულა
                                 </span>

@@ -248,28 +248,15 @@ export default function FloatingMusicPlayer() {
   const youtubeId = extractYouTubeId(url)
   const youtubeWatchUrl = youtubeId ? `https://www.youtube.com/watch?v=${youtubeId}` : null
 
-  return (
-    <div className="fixed bottom-20 sm:bottom-24 left-3 sm:left-6 z-50 flex items-end gap-3 font-sans max-w-[calc(100vw-1.5rem)]">
-      {/* Hidden YouTube player container */}
-      <div
-        ref={ytContainerRef}
-        className="fixed w-px h-px opacity-0 pointer-events-none overflow-hidden"
-        style={{ left: -9999, top: -9999 }}
-        aria-hidden
-      />
-
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9, x: -20 }}
-            animate={{ opacity: 1, scale: 1, x: 0 }}
-            exit={{ opacity: 0, scale: 0.9, x: -20 }}
-            className="w-full sm:w-80 p-4 rounded-2xl glass-morphism-strong border shadow-xl flex flex-col gap-3"
-            style={{
-              borderColor: 'var(--border-subtle)',
-              background: 'var(--bg-elevated)',
-            }}
-          >
+  const panel = (
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9, y: 12 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.9, y: 12 }}
+          className="app-dock-panel app-dock-panel--music app-music-panel"
+        >
             <div
               className="flex items-center justify-between border-b pb-2"
               style={{ borderColor: 'var(--border-subtle)' }}
@@ -372,31 +359,39 @@ export default function FloatingMusicPlayer() {
           </motion.div>
         )}
       </AnimatePresence>
+  )
 
-      <motion.button
-        whileHover={{ scale: 1.1 }}
-        whileTap={{ scale: 0.95 }}
-        onClick={() => setIsOpen(!isOpen)}
-        className="w-12 h-12 rounded-full flex items-center justify-center shadow-lg relative border shrink-0"
-        style={{
-          background: 'var(--bg-card-solid)',
-          borderColor: 'var(--border-subtle)',
-          boxShadow: 'var(--shadow-card)',
-        }}
-        aria-label="მუსიკის პლეერი"
-      >
-        <Music
-          size={18}
-          className={
-            isPlaying
-              ? 'text-[var(--accent)] animate-spin [animation-duration:6s]'
-              : 'text-[var(--text-muted)]'
-          }
-        />
-        {isPlaying && (
-          <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-green-500 border-2 border-white rounded-full animate-ping" />
-        )}
-      </motion.button>
+  const fab = (
+    <motion.button
+      whileHover={{ scale: 1.08 }}
+      whileTap={{ scale: 0.95 }}
+      onClick={() => setIsOpen(!isOpen)}
+      className={`app-dock-btn ${isOpen ? 'app-dock-btn--active' : ''}`}
+      aria-label="მუსიკის პლეერი"
+      aria-pressed={isOpen}
+    >
+      <Music
+        size={18}
+        className={
+          isPlaying
+            ? 'text-[var(--accent)] animate-spin [animation-duration:6s]'
+            : 'text-[var(--text-muted)]'
+        }
+      />
+      {isPlaying && <span className="app-dock-btn-ping" aria-hidden />}
+    </motion.button>
+  )
+
+  return (
+    <div className="app-music-trigger font-sans max-w-[calc(100vw-1.5rem)]">
+      <div
+        ref={ytContainerRef}
+        className="fixed w-px h-px opacity-0 pointer-events-none overflow-hidden"
+        style={{ left: -9999, top: -9999 }}
+        aria-hidden
+      />
+      {panel}
+      {fab}
     </div>
   )
 }

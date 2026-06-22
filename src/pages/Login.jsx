@@ -45,7 +45,7 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen relative overflow-hidden flex">
+    <div className="min-h-screen relative overflow-hidden flex luxury-login">
       <motion.div className="absolute inset-0" initial={{ scale: 1.08 }} animate={{ scale: 1 }} transition={{ duration: 12 }}>
         <img src={brandBg} alt="PEAR" className="w-full h-full object-cover object-center" />
         <div className="absolute inset-0 bg-gradient-to-r from-black/75 via-black/55 to-black/80" />
@@ -67,8 +67,7 @@ export default function Login() {
           animate={{ opacity: 1, y: 0 }}
           className="flex flex-1 items-center justify-center p-6 sm:p-10 lg:max-w-xl lg:ml-auto"
         >
-          <div className="w-full max-w-md">
-            <div className="rounded-3xl border border-[#f5f0e8]/10 bg-black/40 backdrop-blur-xl p-8 sm:p-10 shadow-2xl">
+            <div className="luxury-login-card w-full max-w-md rounded-3xl border border-[#d4a853]/25 bg-black/45 backdrop-blur-xl p-8 sm:p-10 shadow-2xl">
               <p className="text-[#f5f0e8]/50 text-xs uppercase tracking-[0.25em] mb-3">მოგესალმებით</p>
               <h1 className="text-[#f5f0e8] text-3xl font-light tracking-wide mb-8">შესვლა</h1>
 
@@ -102,7 +101,7 @@ export default function Login() {
                     </button>
                   </div>
                 </div>
-                <Button type="submit" loading={loading} variant="luxury" className="w-full !py-4 !text-sm !tracking-[0.15em] !uppercase">
+                <Button type="submit" loading={loading} variant="primary" className="w-full !py-4 !text-sm !tracking-[0.15em] !uppercase">
                   შესვლა
                 </Button>
               </form>
@@ -111,7 +110,6 @@ export default function Login() {
                 წვდომა მხოლოდ მოწვევით
               </p>
             </div>
-          </div>
         </motion.div>
       </div>
     </div>

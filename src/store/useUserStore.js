@@ -38,7 +38,8 @@ export const useUserStore = create((set, get) => ({
   challenges: [],
   dailyTasks: [],
   dailyTaskCompletions: [],
-  dailyTaskPenalties: [],
+  feedPosts: [],
+  lastNewPostId: null,
   billboardModelId: null,
 
   setUser: (user, role, modelId) =>
@@ -240,6 +241,18 @@ export const useUserStore = create((set, get) => ({
     set({ dailyTaskCompletions: remoteCompletions || [] }),
   syncDailyTaskPenalties: (remotePenalties) =>
     set({ dailyTaskPenalties: remotePenalties || [] }),
+  syncFeedPosts: (remotePosts) => set({ feedPosts: remotePosts || [] }),
+  prependFeedPost: (post) =>
+    set((state) => ({
+      feedPosts: [post, ...state.feedPosts.filter((p) => p.id !== post.id)],
+      lastNewPostId: post.id,
+    })),
+  clearLastNewPostId: () => set({ lastNewPostId: null }),
+  removeFeedPost: (postId) =>
+    set((state) => ({
+      feedPosts: state.feedPosts.filter((p) => p.id !== postId),
+      lastNewPostId: state.lastNewPostId === postId ? null : state.lastNewPostId,
+    })),
   syncBillboardModelId: (id) => set({ billboardModelId: id }),
 
   addIdea: (idea) => set((state) => ({ ideas: [idea, ...state.ideas] })),

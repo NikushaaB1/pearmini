@@ -63,7 +63,7 @@ export default function Navbar({ onSearch }) {
         </div>
 
         <div className="hidden lg:flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-emerald-500" />
+          <span className="w-2 h-2 rounded-full bg-[var(--accent-bright)]" />
           <span className="text-xs text-pear-muted">სისტემა აქტიურია</span>
         </div>
 

@@ -1,0 +1,19 @@
+{
+  "name": "PEAR Elite",
+  "short_name": "PEAR",
+  "description": "PEAR™ Elite — მოდელების მართვის პლატფორმა",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#fef9f4",
+  "theme_color": "#fef9f4",
+  "orientation": "portrait-primary",
+  "lang": "ka",
+  "icons": [
+    {
+      "src": "/pear-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

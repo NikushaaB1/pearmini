@@ -1,2 +1,8 @@
 [functions.create-user]
 verify_jwt = true
+
+[functions.ai-post-assist]
+verify_jwt = true
+
+[functions.gemini-assist]
+verify_jwt = true

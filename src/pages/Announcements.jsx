@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion'
-import { Pin, Clock, Megaphone } from 'lucide-react'
+import { Pin, Clock, Megaphone, ArrowRight } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import PageTransition from '../components/animations/PageTransition'
 import { FadeInContainer, FadeInItem } from '../components/animations/FadeIn'
 import Card from '../components/ui/Card'
@@ -33,6 +34,13 @@ export default function Announcements() {
             title="განცხადებები"
             subtitle="PEAR™ Elite-ის ოფიციალური შეტყობინებები და განახლებები"
           />
+        </FadeInItem>
+
+        <FadeInItem>
+          <Link to="/posts" className="feed-notice-link">
+            <span>👥 სოციალური პოსტები — პოსტების გვერდზე</span>
+            <ArrowRight size={16} />
+          </Link>
         </FadeInItem>
 
         <div className="space-y-4 max-w-3xl mx-auto">

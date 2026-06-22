@@ -211,7 +211,7 @@ export default function Shop() {
         >
           {successReward && (
             <div className="text-center space-y-4 py-2">
-              <div className="w-16 h-16 bg-green-500/10 text-green-500 rounded-full flex items-center justify-center mx-auto mb-2 animate-bounce">
+              <div className="w-16 h-16 bg-[var(--gold-soft)] text-[var(--gold)] rounded-full flex items-center justify-center mx-auto mb-2 animate-bounce">
                 <Check size={32} />
               </div>
               <h3 className="font-bold text-md text-[var(--text-primary)]">ქულები წარმატებით გადაიცვალა!</h3>

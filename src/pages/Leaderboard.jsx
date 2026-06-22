@@ -6,6 +6,7 @@ import PageTransition from '../components/animations/PageTransition'
 import { FadeInContainer, FadeInItem } from '../components/animations/FadeIn'
 import Card from '../components/ui/Card'
 import PageHeader from '../components/ui/PageHeader'
+import PageBreadcrumb from '../components/ui/PageBreadcrumb'
 import ModelAvatar from '../components/ui/ModelAvatar'
 import { buildLeaderboard, useUserStore } from '../store/useUserStore'
 
@@ -15,7 +16,15 @@ export default function Leaderboard() {
   const navigate = useNavigate()
   const models = useUserStore((s) => s.models)
   const points = useUserStore((s) => s.points)
+  const modelId = useUserStore((s) => s.modelId)
   const leaderboard = useMemo(() => buildLeaderboard(models, points), [models, points])
+
+  const myEntry = useMemo(() => {
+    if (!modelId) return null
+    const idx = leaderboard.findIndex((m) => m.id === modelId)
+    if (idx < 0) return null
+    return { rank: idx + 1, model: leaderboard[idx] }
+  }, [leaderboard, modelId])
 
   const maxPoints = useMemo(
     () => Math.max(50, ...leaderboard.map((m) => m.points)),
@@ -28,6 +37,9 @@ export default function Leaderboard() {
   return (
     <PageTransition>
       <FadeInContainer>
+        <FadeInItem>
+          <PageBreadcrumb to="/dashboard" label="დაფა" />
+        </FadeInItem>
         <FadeInItem>
           <PageHeader
             eyebrow="რეიტინგი"
@@ -157,6 +169,35 @@ export default function Leaderboard() {
               })}
             </div>
           </>
+        )}
+
+        {myEntry && (
+          <FadeInItem>
+            <div className="my-rank-bar">
+              <span className="text-lg font-bold text-[var(--accent-bright)] w-8 text-center shrink-0">
+                #{myEntry.rank}
+              </span>
+              <ModelAvatar
+                src={myEntry.model.avatar}
+                name={myEntry.model.name}
+                size="xs"
+                className="!rounded-xl shrink-0"
+              />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-[var(--text-primary)] truncate">
+                  შენი ადგილი — {myEntry.model.name}
+                </p>
+                <p className="text-xs text-[var(--text-muted)]">{myEntry.model.points} ქულა</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => navigate(`/models/${modelId}`)}
+                className="elite-chip shrink-0 cursor-pointer hover:opacity-90"
+              >
+                პროფილი
+              </button>
+            </div>
+          </FadeInItem>
         )}
       </FadeInContainer>
     </PageTransition>

@@ -21,6 +21,9 @@ const Challenges = lazy(() => import('../pages/Challenges'))
 const Shop = lazy(() => import('../pages/Shop'))
 const Polls = lazy(() => import('../pages/Polls'))
 const DailyTasks = lazy(() => import('../pages/DailyTasks'))
+const Menu = lazy(() => import('../pages/Menu'))
+const Posts = lazy(() => import('../pages/Posts'))
+const AiAssistant = lazy(() => import('../pages/AiAssistant'))
 
 function ProtectedRoute({ children }) {
   const user = useUserStore((s) => s.user)
@@ -76,6 +79,9 @@ export default function AppRoutes() {
             <Route path="/shop" element={<Shop />} />
             <Route path="/polls" element={<Polls />} />
             <Route path="/daily-tasks" element={<DailyTasks />} />
+            <Route path="/posts" element={<Posts />} />
+            <Route path="/ai" element={<AiAssistant />} />
+            <Route path="/menu" element={<Menu />} />
           </Route>
 
           <Route path="/signup" element={<Navigate to="/login" replace />} />

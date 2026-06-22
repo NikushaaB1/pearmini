@@ -165,7 +165,7 @@ export default function Challenges() {
                       <Card key={chal.id} hover={false} className="flex flex-col justify-between border" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-hover)' }}>
                         <div className="flex justify-between items-start gap-4">
                           <div>
-                            <span className="text-[9px] uppercase font-bold tracking-widest text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-full">
+                            <span className="text-[9px] uppercase font-bold tracking-widest text-[var(--accent-bright)] bg-[var(--accent-soft)] px-2 py-0.5 rounded-full">
                               დასრულებული
                             </span>
                             <h3 className="font-semibold text-sm text-[var(--text-primary)] mt-2">{chal.title}</h3>

@@ -19,18 +19,11 @@ export default function PageHeader({ eyebrow = 'PEAR™ Elite', title, subtitle,
           )}
           <h1 className="page-title flex items-center gap-2 sm:gap-3 flex-wrap">
             {Icon && (
-              <span
-                className="flex items-center justify-center w-10 h-10 sm:w-11 sm:h-11 rounded-xl shrink-0"
-                style={{
-                  background: 'var(--gradient-gold-soft)',
-                  color: 'var(--accent-bright)',
-                  boxShadow: 'inset 0 0 0 1px rgba(212, 168, 83, 0.2)',
-                }}
-              >
+              <span className="page-title-icon">
                 <Icon size={22} strokeWidth={1.5} />
               </span>
             )}
-            <span>{title}</span>
+            <span className="font-display">{title}</span>
           </h1>
           {subtitle && <p className="page-subtitle">{subtitle}</p>}
         </div>
