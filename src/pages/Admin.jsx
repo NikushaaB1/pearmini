@@ -5,7 +5,7 @@ import { Navigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 
 import {
-  Shield, Plus, Minus, Download, Trash2, Pin, Megaphone, Activity, Award, Image as ImageIcon, Edit2, MessageSquare, Sparkles, Music
+  Shield, Plus, Minus, Download, Trash2, Pin, Megaphone, Activity, Award, Image as ImageIcon, Edit2, MessageSquare, Sparkles, Music, ScrollText
 } from 'lucide-react'
 import { createChallenge, rewardWinner, deleteChallenge, updateChallenge } from '../services/challengesService'
 import { deleteDesign } from '../services/designsService'
@@ -29,7 +29,7 @@ import EditChallengeModal from '../components/ui/EditChallengeModal'
 
 import { useUserStore } from '../store/useUserStore'
 
-import { getModelImages, downloadBulk } from '../services/storage'
+import { getModelImages, downloadBulk, uploadImage } from '../services/storage'
 import { getCVSubmissions, fetchCVSubmissions, downloadCV, openCV } from '../services/cvService'
 
 import { deleteModelFromFirestore, saveModel } from '../services/modelsService'
@@ -40,6 +40,7 @@ import {
   toggleAnnouncementPin,
   deleteAnnouncement as removeAnnouncement,
 } from '../services/announcementsService'
+import { createRule } from '../services/rulesService'
 import ModelAvatar from '../components/ui/ModelAvatar'
 
 import CreateUserForm from '../components/admin/CreateUserForm'
@@ -63,9 +64,9 @@ import defaultBillboard from '../assets/pear-billboard.png'
 
 export default function Admin() {
 
-  const { role, points, addPoints, setPoints, addAnnouncement,
+  const { role, points, addPoints, setPoints, addAnnouncement, addRule,
 
-    togglePinAnnouncement, deleteAnnouncement, announcements, activityLog,
+    togglePinAnnouncement, deleteAnnouncement, announcements, rules, activityLog,
 
     models, removeModel, updateModel, challenges, designs, dailyTasks } = useUserStore()
 
@@ -81,6 +82,10 @@ export default function Admin() {
 
   const [annPinned, setAnnPinned] = useState(false)
 
+  const [ruleTitle, setRuleTitle] = useState('')
+  const [ruleContent, setRuleContent] = useState('')
+  const [ruleSortOrder, setRuleSortOrder] = useState('0')
+
   const [annImageUrl, setAnnImageUrl] = useState('')
 
   const [annImagePreview, setAnnImagePreview] = useState('')
@@ -92,6 +97,7 @@ export default function Admin() {
   const [activeTab, setActiveTab] = useState('users')
 
   const annImageInputRef = useRef(null)
+  const annImageFileRef = useRef(null)
 
   const [chalTitle, setChalTitle] = useState('')
   const [chalDesc, setChalDesc] = useState('')
@@ -198,6 +204,7 @@ export default function Admin() {
   const handleAnnounceImageChange = (e) => {
     const file = e.target.files?.[0]
     if (file) {
+      annImageFileRef.current = file
       const reader = new FileReader()
       reader.onload = (evt) => {
         const url = evt.target?.result
@@ -276,10 +283,21 @@ export default function Admin() {
 
     try {
 
+      let imageUrl = annImageUrl || null
+
       if (isUsingLocalAuth()) {
-        addAnnouncement({ title: annTitle, content: annContent, pinned: annPinned, imageUrl: annImageUrl })
+        addAnnouncement({ title: annTitle, content: annContent, pinned: annPinned, imageUrl })
       } else {
-        await createAnnouncement({ title: annTitle.trim(), content: annContent.trim(), pinned: annPinned, imageUrl: annImageUrl })
+        if (annImageFileRef.current) {
+          const uploaded = await uploadImage(annImageFileRef.current, 'admin', 'announcements')
+          imageUrl = uploaded.url
+        }
+        await createAnnouncement({
+          title: annTitle.trim(),
+          content: annContent.trim(),
+          pinned: annPinned,
+          imageUrl,
+        })
       }
 
       toast.success('განცხადება გამოქვეყნდა!')
@@ -294,12 +312,38 @@ export default function Admin() {
 
       setAnnImagePreview('')
 
+      annImageFileRef.current = null
+
     } catch {
 
       toast.error('განცხადების გამოქვეყნება ვერ მოხერხდა')
 
     }
 
+  }
+
+  const handleAddRule = async () => {
+    if (!ruleTitle.trim() || !ruleContent.trim()) {
+      toast.error('სათაური და ტექსტი აუცილებელია')
+      return
+    }
+
+    const sortOrder = parseInt(ruleSortOrder, 10) || 0
+
+    try {
+      if (isUsingLocalAuth()) {
+        addRule({ title: ruleTitle.trim(), content: ruleContent.trim(), sortOrder })
+      } else {
+        await createRule({ title: ruleTitle.trim(), content: ruleContent.trim(), sortOrder })
+      }
+
+      toast.success('წესი დაემატა!')
+      setRuleTitle('')
+      setRuleContent('')
+      setRuleSortOrder('0')
+    } catch {
+      toast.error('წესის დამატება ვერ მოხერხდა')
+    }
   }
 
 
@@ -364,6 +408,8 @@ export default function Admin() {
     { id: 'users', label: 'მომხმარებლები', icon: Shield },
 
     { id: 'announcements', label: 'განცხადებები', icon: Megaphone },
+
+    { id: 'rules', label: 'წესები', icon: ScrollText },
 
     { id: 'spotlight', label: 'კამპანია', icon: Sparkles },
 
@@ -950,6 +996,138 @@ export default function Admin() {
                     </div>
 
                   ))}
+
+                </div>
+
+              </Card>
+
+            </div>
+
+          </FadeInItem>
+
+        )}
+
+
+
+        {activeTab === 'rules' && (
+
+          <FadeInItem>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+              <Card hover={false}>
+
+                <h3 className="font-semibold mb-4 text-[var(--text-primary)]">წესის დამატება</h3>
+
+                <div className="space-y-4">
+
+                  <input
+
+                    value={ruleTitle}
+
+                    onChange={(e) => setRuleTitle(e.target.value)}
+
+                    placeholder="სათაური"
+
+                    className="admin-input"
+
+                  />
+
+                  <textarea
+
+                    value={ruleContent}
+
+                    onChange={(e) => setRuleContent(e.target.value)}
+
+                    placeholder="წესის ტექსტი"
+
+                    rows={6}
+
+                    className="admin-input resize-none"
+
+                  />
+
+                  <input
+
+                    type="number"
+
+                    value={ruleSortOrder}
+
+                    onChange={(e) => setRuleSortOrder(e.target.value)}
+
+                    placeholder="რიგი (0, 1, 2...)"
+
+                    className="admin-input"
+
+                    min={0}
+
+                  />
+
+                  <Button onClick={handleAddRule} className="w-full">
+
+                    <ScrollText size={16} /> წესის დამატება
+
+                  </Button>
+
+                </div>
+
+              </Card>
+
+
+
+              <Card hover={false}>
+
+                <h3 className="font-semibold mb-4 text-[var(--text-primary)]">არსებული წესები</h3>
+
+                <div className="space-y-3 max-h-96 overflow-y-auto">
+
+                  {[...rules]
+
+                    .sort((a, b) => {
+
+                      if (a.sortOrder !== b.sortOrder) return a.sortOrder - b.sortOrder
+
+                      return new Date(a.createdAt) - new Date(b.createdAt)
+
+                    })
+
+                    .map((rule, i) => (
+
+                      <div key={rule.id} className="flex items-start gap-3 p-3 rounded-xl glass">
+
+                        <span
+
+                          className="flex items-center justify-center w-7 h-7 rounded-lg shrink-0 text-xs font-semibold"
+
+                          style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}
+
+                        >
+
+                          {i + 1}
+
+                        </span>
+
+                        <div className="flex-1 min-w-0">
+
+                          <p className="text-sm font-medium text-[var(--text-primary)]">{rule.title}</p>
+
+                          <p className="text-xs text-[var(--text-muted)] line-clamp-3 mt-1 whitespace-pre-wrap">
+
+                            {rule.content}
+
+                          </p>
+
+                        </div>
+
+                      </div>
+
+                    ))}
+
+                  {rules.length === 0 && (
+
+                    <p className="text-sm text-[var(--text-muted)] text-center py-6">წესები ჯერ არ არის</p>
+
+                  )}
 
                 </div>
 

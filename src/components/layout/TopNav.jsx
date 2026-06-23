@@ -1,4 +1,4 @@
-﻿import { useState, useRef, useEffect } from 'react'
+﻿import { useState, useRef, useEffect, useCallback } from 'react'
 import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -20,6 +20,7 @@ import {
   Settings,
   Newspaper,
   Sparkles,
+  ScrollText,
   LogOut,
 } from 'lucide-react'
 import pearLogo from '../../assets/pear-logo.jpg'
@@ -39,6 +40,7 @@ const primaryNav = [
 
 const exploreNav = [
   { to: '/announcements', icon: Megaphone, label: 'განცხადებები', desc: 'ოფიციალური' },
+  { to: '/rules', icon: ScrollText, label: 'წესები', desc: 'პლატფორმის წესები' },
   { to: '/leaderboard', icon: Trophy, label: 'რეიტინგი', desc: 'TOP ქულები' },
   { to: '/challenges', icon: Award, label: 'გამოწვევები', desc: 'კონკურსები' },
   { to: '/daily-tasks', icon: ListChecks, label: 'დავალებები', desc: 'ყოველდღიური' },
@@ -99,9 +101,9 @@ export default function TopNav() {
   const modelsRef = useRef(null)
   const userRef = useRef(null)
 
-  useClickOutside(exploreRef, () => setExploreOpen(false))
-  useClickOutside(modelsRef, () => setModelsOpen(false))
-  useClickOutside(userRef, () => setUserOpen(false))
+  useClickOutside(exploreRef, useCallback(() => setExploreOpen(false), []))
+  useClickOutside(modelsRef, useCallback(() => setModelsOpen(false), []))
+  useClickOutside(userRef, useCallback(() => setUserOpen(false), []))
 
   useEffect(() => {
     setExploreOpen(false)
@@ -144,11 +146,13 @@ export default function TopNav() {
         <div className="nav-divider" />
 
         <nav className="nav-links flex">
-          {primaryNav.map((item) => (
-            <NavItem key={item.to} {...item} end={item.to === '/dashboard'} />
-          ))}
+          <div className="nav-links-scroll">
+            {primaryNav.map((item) => (
+              <NavItem key={item.to} {...item} end={item.to === '/dashboard'} />
+            ))}
+          </div>
 
-          <div className="relative" ref={exploreRef}>
+          <div className="relative shrink-0" ref={exploreRef}>
             <button
               type="button"
               onClick={() => {
@@ -164,36 +168,39 @@ export default function TopNav() {
             <AnimatePresence>
               {exploreOpen && (
                 <motion.div
+                  key="explore-popover"
+                  className="nav-popover-anchor"
                   initial={{ opacity: 0, y: 10, scale: 0.96 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 10, scale: 0.96 }}
                   transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-                  className="nav-popover"
                 >
-                  <div className="nav-popover-grid">
-                    {exploreNav.map((item) => (
-                      <NavLink
-                        key={item.to}
-                        to={item.to}
-                        onClick={closeAll}
-                        className={({ isActive }) =>
-                          `nav-popover-card ${isActive ? 'nav-popover-card--active' : ''}`
-                        }
-                      >
-                        <span className="nav-popover-card-icon">
-                          <item.icon size={16} strokeWidth={1.75} />
-                        </span>
-                        <span className="text-xs font-semibold">{item.label}</span>
-                        <span className="text-[10px] opacity-70">{item.desc}</span>
-                      </NavLink>
-                    ))}
+                  <div className="nav-popover">
+                    <div className="nav-popover-grid">
+                      {exploreNav.map((item) => (
+                        <NavLink
+                          key={item.to}
+                          to={item.to}
+                          onClick={closeAll}
+                          className={({ isActive }) =>
+                            `nav-popover-card ${isActive ? 'nav-popover-card--active' : ''}`
+                          }
+                        >
+                          <span className="nav-popover-card-icon">
+                            <item.icon size={16} strokeWidth={1.75} />
+                          </span>
+                          <span className="text-xs font-semibold">{item.label}</span>
+                          <span className="text-[10px] opacity-70">{item.desc}</span>
+                        </NavLink>
+                      ))}
+                    </div>
                   </div>
                 </motion.div>
               )}
             </AnimatePresence>
           </div>
 
-          <div className="relative" ref={modelsRef}>
+          <div className="relative shrink-0" ref={modelsRef}>
             <button
               type="button"
               onClick={() => {
@@ -209,40 +216,43 @@ export default function TopNav() {
             <AnimatePresence>
               {modelsOpen && (
                 <motion.div
+                  key="models-popover"
+                  className="nav-popover-anchor"
                   initial={{ opacity: 0, y: 10, scale: 0.96 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 10, scale: 0.96 }}
                   transition={{ duration: 0.2 }}
-                  className="nav-popover w-64 max-h-80 overflow-y-auto"
                 >
-                  <NavLink
-                    to="/models"
-                    onClick={closeAll}
-                    className={({ isActive }) =>
-                      `nav-popover-list-item font-semibold ${isActive ? 'nav-popover-list-item--active' : ''}`
-                    }
-                  >
-                    <Users size={16} />
-                    ყველა მოდელი
-                  </NavLink>
-                  {models.map((m) => (
+                  <div className="nav-popover w-64 max-h-80 overflow-y-auto">
                     <NavLink
-                      key={m.id}
-                      to={`/models/${m.id}`}
+                      to="/models"
                       onClick={closeAll}
                       className={({ isActive }) =>
-                        `nav-popover-list-item ${isActive ? 'nav-popover-list-item--active' : ''}`
+                        `nav-popover-list-item font-semibold ${isActive ? 'nav-popover-list-item--active' : ''}`
                       }
                     >
-                      <ModelAvatar src={m.avatar} name={m.name} size="xs" className="!rounded-lg !w-8 !h-8" />
-                      <span className="truncate flex-1">
-                        {m.name}
-                        {!isAdminRole(role) && m.id === modelId && (
-                          <span className="text-[10px] text-[var(--accent)] ml-1">• შენი</span>
-                        )}
-                      </span>
+                      <Users size={16} />
+                      ყველა მოდელი
                     </NavLink>
-                  ))}
+                    {models.map((m) => (
+                      <NavLink
+                        key={m.id}
+                        to={`/models/${m.id}`}
+                        onClick={closeAll}
+                        className={({ isActive }) =>
+                          `nav-popover-list-item ${isActive ? 'nav-popover-list-item--active' : ''}`
+                        }
+                      >
+                        <ModelAvatar src={m.avatar} name={m.name} size="xs" className="!rounded-lg !w-8 !h-8" />
+                        <span className="truncate flex-1">
+                          {m.name}
+                          {!isAdminRole(role) && m.id === modelId && (
+                            <span className="text-[10px] text-[var(--accent)] ml-1">• შენი</span>
+                          )}
+                        </span>
+                      </NavLink>
+                    ))}
+                  </div>
                 </motion.div>
               )}
             </AnimatePresence>
@@ -312,26 +322,29 @@ export default function TopNav() {
             <AnimatePresence>
               {userOpen && (
                 <motion.div
+                  key="user-popover"
+                  className="nav-popover-anchor nav-popover-anchor--right"
                   initial={{ opacity: 0, y: 8, scale: 0.97 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 8, scale: 0.97 }}
                   transition={{ duration: 0.18 }}
-                  className="nav-popover nav-popover--right w-52"
                 >
-                  <NavLink to={profileLink} onClick={closeAll} className="nav-popover-list-item">
-                    <User size={16} />
-                    ჩემი პროფილი
-                  </NavLink>
-                  {isAdminRole(role) && (
-                    <NavLink to="/admin" onClick={closeAll} className="nav-popover-list-item">
-                      <Settings size={16} />
-                      ადმინ პანელი
+                  <div className="nav-popover w-52">
+                    <NavLink to={profileLink} onClick={closeAll} className="nav-popover-list-item">
+                      <User size={16} />
+                      ჩემი პროფილი
                     </NavLink>
-                  )}
-                  <button type="button" onClick={handleLogout} className="nav-popover-list-item nav-popover-list-item--danger w-full">
-                    <LogOut size={16} />
-                    გასვლა
-                  </button>
+                    {isAdminRole(role) && (
+                      <NavLink to="/admin" onClick={closeAll} className="nav-popover-list-item">
+                        <Settings size={16} />
+                        ადმინ პანელი
+                      </NavLink>
+                    )}
+                    <button type="button" onClick={handleLogout} className="nav-popover-list-item nav-popover-list-item--danger w-full">
+                      <LogOut size={16} />
+                      გასვლა
+                    </button>
+                  </div>
                 </motion.div>
               )}
             </AnimatePresence>

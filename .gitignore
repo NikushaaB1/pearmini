@@ -5,3 +5,4 @@ dist
 ACCOUNTS.txt
 .DS_Store
 *.log
+.gemini-deploy-out.json

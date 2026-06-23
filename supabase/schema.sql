@@ -50,6 +50,19 @@ create table if not exists public.announcements (
 create index if not exists announcements_created_at_idx on public.announcements (created_at desc);
 create index if not exists announcements_pinned_idx on public.announcements (pinned);
 
+-- Platform rules
+create table if not exists public.platform_rules (
+  id uuid primary key default gen_random_uuid(),
+  title text not null check (char_length(title) between 1 and 200),
+  content text not null check (char_length(content) between 1 and 5000),
+  sort_order int not null default 0,
+  author text not null default 'ადმინისტრატორი',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists platform_rules_sort_order_idx on public.platform_rules (sort_order asc, created_at asc);
+
 -- Activity log
 create table if not exists public.activity_log (
   id uuid primary key default gen_random_uuid(),
@@ -209,6 +222,7 @@ alter table public.profiles enable row level security;
 alter table public.models enable row level security;
 alter table public.model_points enable row level security;
 alter table public.announcements enable row level security;
+alter table public.platform_rules enable row level security;
 alter table public.activity_log enable row level security;
 alter table public.chat_messages enable row level security;
 
@@ -317,6 +331,32 @@ create policy "announcements_update_admin"
 drop policy if exists "announcements_delete_admin" on public.announcements;
 create policy "announcements_delete_admin"
   on public.announcements for delete
+  to authenticated
+  using (public.is_admin());
+
+-- Platform rules policies
+drop policy if exists "platform_rules_select_authenticated" on public.platform_rules;
+create policy "platform_rules_select_authenticated"
+  on public.platform_rules for select
+  to authenticated
+  using (true);
+
+drop policy if exists "platform_rules_insert_admin" on public.platform_rules;
+create policy "platform_rules_insert_admin"
+  on public.platform_rules for insert
+  to authenticated
+  with check (public.is_admin());
+
+drop policy if exists "platform_rules_update_admin" on public.platform_rules;
+create policy "platform_rules_update_admin"
+  on public.platform_rules for update
+  to authenticated
+  using (public.is_admin())
+  with check (public.is_admin());
+
+drop policy if exists "platform_rules_delete_admin" on public.platform_rules;
+create policy "platform_rules_delete_admin"
+  on public.platform_rules for delete
   to authenticated
   using (public.is_admin());
 

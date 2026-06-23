@@ -15,6 +15,7 @@ import {
   LayoutGrid,
   Newspaper,
   Sparkles,
+  ScrollText,
 } from 'lucide-react'
 
 /** Desktop center tabs */
@@ -56,6 +57,7 @@ export function getMenuShortcuts({ profileLink, userName, isAdmin }) {
     { to: '/challenges', icon: Award, label: 'გამოწვევები', iconBg: 'rgba(183, 110, 121, 0.12)', iconColor: '#b76e79' },
     { to: '/polls', icon: Vote, label: 'POLL', iconBg: 'rgba(212, 168, 83, 0.14)', iconColor: '#b8860b' },
     { to: '/announcements', icon: Megaphone, label: 'განცხადებები', iconBg: 'rgba(201, 169, 98, 0.15)', iconColor: '#c9956a' },
+    { to: '/rules', icon: ScrollText, label: 'წესები', iconBg: 'rgba(183, 110, 121, 0.12)', iconColor: '#b76e79' },
     { to: '/shop', icon: Gift, label: 'მაღაზია', iconBg: 'rgba(240, 215, 140, 0.2)', iconColor: '#b8860b' },
   ]
 

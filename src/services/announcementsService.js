@@ -8,6 +8,7 @@ function rowToAnnouncement(row) {
     content: row.content,
     pinned: row.pinned,
     author: row.author,
+    imageUrl: row.image_url ?? row.imageUrl ?? null,
     createdAt: row.created_at,
   }
 }
@@ -22,11 +23,17 @@ export async function fetchAllAnnouncements() {
   return (data || []).map(rowToAnnouncement)
 }
 
-export async function createAnnouncement({ title, content, pinned = false, author = 'ადმინისტრატორი' }) {
+export async function createAnnouncement({
+  title,
+  content,
+  pinned = false,
+  author = 'ადმინისტრატორი',
+  imageUrl = null,
+}) {
   if (!isConfigured || !supabase) return null
   const { data, error } = await supabase
     .from('announcements')
-    .insert({ title, content, pinned, author })
+    .insert({ title, content, pinned, author, image_url: imageUrl || null })
     .select()
     .single()
   if (error) throw error

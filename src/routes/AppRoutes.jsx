@@ -15,6 +15,7 @@ const ModelProfile = lazy(() => import('../pages/ModelProfile'))
 const Admin = lazy(() => import('../pages/Admin'))
 const Leaderboard = lazy(() => import('../pages/Leaderboard'))
 const Announcements = lazy(() => import('../pages/Announcements'))
+const Rules = lazy(() => import('../pages/Rules'))
 const Chat = lazy(() => import('../pages/Chat'))
 const Profile = lazy(() => import('../pages/Profile'))
 const Challenges = lazy(() => import('../pages/Challenges'))
@@ -73,6 +74,7 @@ export default function AppRoutes() {
             <Route path="/admin" element={<Admin />} />
             <Route path="/leaderboard" element={<Leaderboard />} />
             <Route path="/announcements" element={<Announcements />} />
+            <Route path="/rules" element={<Rules />} />
             <Route path="/chat" element={<Chat />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/challenges" element={<Challenges />} />

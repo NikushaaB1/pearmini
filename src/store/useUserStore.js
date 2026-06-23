@@ -31,6 +31,7 @@ export const useUserStore = create((set, get) => ({
   models: [],
   points: {},
   announcements: [],
+  rules: [],
   activityLog: [],
   editedPhotos: {},
   ideas: [],
@@ -38,6 +39,7 @@ export const useUserStore = create((set, get) => ({
   challenges: [],
   dailyTasks: [],
   dailyTaskCompletions: [],
+  dailyTaskPenalties: [],
   feedPosts: [],
   lastNewPostId: null,
   billboardModelId: null,
@@ -47,7 +49,29 @@ export const useUserStore = create((set, get) => ({
   setUserAvatar: (avatar) => set({ userAvatar: avatar }),
   setUserProfiles: (userProfiles) => set({ userProfiles, profilesLoaded: true }),
   clearUser: () =>
-    set({ user: null, role: null, modelId: null, userAvatar: null, userProfiles: {}, profilesLoaded: false }),
+    set({
+      user: null,
+      role: null,
+      modelId: null,
+      userAvatar: null,
+      userProfiles: {},
+      profilesLoaded: false,
+      models: [],
+      points: {},
+      announcements: [],
+      rules: [],
+      activityLog: [],
+      editedPhotos: {},
+      ideas: [],
+      designs: [],
+      challenges: [],
+      dailyTasks: [],
+      dailyTaskCompletions: [],
+      dailyTaskPenalties: [],
+      feedPosts: [],
+      lastNewPostId: null,
+      billboardModelId: null,
+    }),
   triggerSplash: () => set({ showSplash: true }),
   dismissSplash: () => set({ showSplash: false }),
 
@@ -101,6 +125,11 @@ export const useUserStore = create((set, get) => ({
   syncAnnouncements: (remoteAnnouncements) => {
     if (!remoteAnnouncements) return
     set({ announcements: remoteAnnouncements })
+  },
+
+  syncRules: (remoteRules) => {
+    if (!remoteRules) return
+    set({ rules: remoteRules })
   },
 
   syncActivityLog: (remoteLog) => {
@@ -210,6 +239,33 @@ export const useUserStore = create((set, get) => ({
   deleteAnnouncement: (id) =>
     set((state) => ({
       announcements: state.announcements.filter((a) => a.id !== id),
+    })),
+
+  addRule: (rule) =>
+    set((state) => ({
+      rules: [
+        ...state.rules,
+        {
+          ...rule,
+          id: rule.id || Date.now().toString(),
+          createdAt: rule.createdAt || new Date().toISOString(),
+          updatedAt: rule.updatedAt || new Date().toISOString(),
+          author: rule.author || 'ადმინისტრატორი',
+          sortOrder: rule.sortOrder ?? 0,
+        },
+      ].sort((a, b) => {
+        if (a.sortOrder !== b.sortOrder) return a.sortOrder - b.sortOrder
+        return new Date(a.createdAt) - new Date(b.createdAt)
+      }),
+      activityLog: [
+        {
+          id: Date.now().toString(),
+          action: `წესი: ${rule.title}`,
+          user: 'ადმინი',
+          timestamp: new Date().toISOString(),
+        },
+        ...state.activityLog,
+      ],
     })),
 
   logActivity: (action, user = 'სისტემა') =>

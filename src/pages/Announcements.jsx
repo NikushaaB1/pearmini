@@ -85,6 +85,15 @@ export default function Announcements() {
                         <p className="text-sm text-[var(--text-muted)] mt-2 leading-relaxed">
                           {ann.content}
                         </p>
+                        {ann.imageUrl && (
+                          <img
+                            src={ann.imageUrl}
+                            alt=""
+                            className="mt-3 w-full rounded-xl border object-cover max-h-80"
+                            style={{ borderColor: 'var(--border-subtle)' }}
+                            loading="lazy"
+                          />
+                        )}
                         <div className="flex items-center gap-4 mt-4 text-xs text-[var(--text-muted)]">
                           <span className="font-medium">{ann.author}</span>
                           <span className="flex items-center gap-1">

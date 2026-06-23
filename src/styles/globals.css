@@ -228,6 +228,7 @@ body::after {
   z-index: 50;
   padding: 0.75rem 1rem 0.5rem;
   pointer-events: none;
+  overflow: visible;
 }
 
 .nav-float {
@@ -248,6 +249,7 @@ body::after {
     var(--glass-shadow),
     0 16px 48px rgba(26, 24, 20, 0.12);
   position: relative;
+  overflow: visible;
 }
 
 .nav-float::before {
@@ -337,9 +339,23 @@ body::after {
   flex: 1;
   justify-content: center;
   min-width: 0;
+  overflow: visible;
+}
+
+.nav-links-scroll {
+  display: flex;
+  align-items: center;
+  gap: 0.1rem;
+  min-width: 0;
+  flex: 1;
+  justify-content: center;
   overflow-x: auto;
   scrollbar-width: none;
   -ms-overflow-style: none;
+}
+
+.nav-links-scroll::-webkit-scrollbar {
+  display: none;
 }
 
 .nav-links::-webkit-scrollbar {
@@ -439,10 +455,10 @@ body::after {
 }
 
 .nav-popover {
-  position: absolute;
-  top: calc(100% + 0.65rem);
-  left: 50%;
-  transform: translateX(-50%);
+  position: relative;
+  top: auto;
+  left: auto;
+  transform: none;
   min-width: 16rem;
   padding: 0.5rem;
   border-radius: 1.15rem;
@@ -452,6 +468,20 @@ body::after {
   backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
   -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
   z-index: 60;
+}
+
+.nav-popover-anchor {
+  position: absolute;
+  top: calc(100% + 0.65rem);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 60;
+}
+
+.nav-popover-anchor--right {
+  left: auto;
+  right: 0;
+  transform: none;
 }
 
 [data-theme="dark"] .nav-popover {

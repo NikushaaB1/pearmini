@@ -10,6 +10,7 @@ import { fetchAllModels, subscribeToModels } from './services/modelsService'
 import { subscribeToUserProfiles } from './services/usersService'
 import { fetchAllPoints, subscribeToPoints } from './services/pointsService'
 import { fetchAllAnnouncements, subscribeToAnnouncements } from './services/announcementsService'
+import { fetchAllRules, subscribeToRules } from './services/rulesService'
 import { fetchActivityLog, subscribeToActivityLog } from './services/activityService'
 import { clearLegacyStorage } from './services/clearLegacyStorage'
 import { isConfigured } from './services/supabaseConfig'
@@ -33,6 +34,7 @@ export default function App() {
     syncModels,
     syncPoints,
     syncAnnouncements,
+    syncRules,
     syncActivityLog,
     setUserProfiles,
   } = useUserStore()
@@ -65,6 +67,9 @@ export default function App() {
           const remoteAnnouncements = await fetchAllAnnouncements()
           if (remoteAnnouncements) syncAnnouncements(remoteAnnouncements)
 
+          const remoteRules = await fetchAllRules()
+          if (remoteRules) syncRules(remoteRules)
+
           const remoteActivity = await fetchActivityLog()
           if (remoteActivity) syncActivityLog(remoteActivity)
         } catch {
@@ -76,7 +81,7 @@ export default function App() {
       setAuthLoading(false)
     })
     return unsubscribe
-  }, [setUser, clearUser, syncModels, syncPoints, syncAnnouncements, syncActivityLog])
+  }, [setUser, clearUser, syncModels, syncPoints, syncAnnouncements, syncRules, syncActivityLog])
 
   useEffect(() => {
     if (!user) return
@@ -99,6 +104,10 @@ export default function App() {
 
     const unsubAnnouncements = subscribeToAnnouncements((remoteAnnouncements) => {
       syncAnnouncements(remoteAnnouncements ?? [])
+    })
+
+    const unsubRules = subscribeToRules((remoteRules) => {
+      syncRules(remoteRules ?? [])
     })
 
     const unsubActivity = subscribeToActivityLog((remoteLog) => {
@@ -142,6 +151,7 @@ export default function App() {
       unsubUsers()
       unsubPoints()
       unsubAnnouncements()
+      unsubRules()
       unsubActivity()
       unsubIdeas()
       unsubDesigns()
@@ -152,7 +162,7 @@ export default function App() {
       unsubFeed()
       unsubBillboard()
     }
-  }, [user, setUserProfiles, syncPoints, syncAnnouncements, syncActivityLog])
+  }, [user, setUserProfiles, syncPoints, syncAnnouncements, syncRules, syncActivityLog])
 
   if (authLoading) {
     return <Loader fullScreen text="იტვირთება..." />
