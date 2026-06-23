@@ -19,7 +19,8 @@ function saveLocalMessages(messages) {
 function rowToMessage(row) {
   return {
     id: row.id,
-    text: row.text,
+    text: row.text ?? '',
+    imageUrl: row.image_url ?? row.imageUrl ?? null,
     senderUid: row.sender_uid,
     senderName: row.sender_name,
     senderRole: row.sender_role,
@@ -73,7 +74,8 @@ export function subscribeToMessages(callback) {
 }
 
 export async function sendMessage({
-  text,
+  text = '',
+  imageUrl = null,
   senderUid,
   senderName,
   senderRole,
@@ -82,13 +84,15 @@ export async function sendMessage({
   senderEmail = null,
 }) {
   const trimmed = text.trim()
-  if (!trimmed || !senderUid) return null
+  const hasImage = Boolean(imageUrl)
+  if ((!trimmed && !hasImage) || !senderUid) return null
   if (trimmed.length > MAX_TEXT_LENGTH) {
     throw new Error('შეტყობინება ძალიან გრძელია')
   }
 
   const message = {
     text: trimmed,
+    image_url: imageUrl || null,
     sender_uid: senderUid,
     sender_name: senderName || 'მომხმარებელი',
     sender_role:

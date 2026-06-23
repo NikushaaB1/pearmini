@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { MessageCircle, Send, Shield, Trash2, Users, Lightbulb, Heart } from 'lucide-react'
+import { MessageCircle, Send, Shield, Trash2, Users, Lightbulb, Heart, ImagePlus, X, Loader2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import PageTransition from '../components/animations/PageTransition'
 import { FadeInContainer, FadeInItem } from '../components/animations/FadeIn'
@@ -16,6 +16,7 @@ import {
   sortMessagesChronologically,
   subscribeToMessages,
 } from '../services/chatService'
+import { uploadImage } from '../services/storage'
 import { createIdea, toggleLikeIdea, deleteIdea } from '../services/ideasService'
 import { isAdminBadgeRole, isAdminRole } from '../utils/roles'
 
@@ -55,11 +56,14 @@ export default function Chat() {
   const [messages, setMessages] = useState([])
   const [text, setText] = useState('')
   const [sending, setSending] = useState(false)
+  const [imageFile, setImageFile] = useState(null)
+  const [imagePreview, setImagePreview] = useState(null)
   const [ready, setReady] = useState(false)
   const [deletingId, setDeletingId] = useState(null)
   const [clearing, setClearing] = useState(false)
   const bottomRef = useRef(null)
   const textareaRef = useRef(null)
+  const imageInputRef = useRef(null)
 
   const ideas = useUserStore((s) => s.ideas)
   const [ideaText, setIdeaText] = useState('')
@@ -92,14 +96,46 @@ export default function Chat() {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [sortedMessages])
 
+  const clearImage = () => {
+    if (imagePreview) URL.revokeObjectURL(imagePreview)
+    setImageFile(null)
+    setImagePreview(null)
+    if (imageInputRef.current) imageInputRef.current.value = ''
+  }
+
+  const handleImageSelect = (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (!file.type.startsWith('image/')) {
+      toast.error('მხოლოდ სურათის ფაილი')
+      return
+    }
+    if (file.size > 8 * 1024 * 1024) {
+      toast.error('სურათი 8MB-ზე პატარა უნდა იყოს')
+      return
+    }
+    if (imagePreview) URL.revokeObjectURL(imagePreview)
+    setImageFile(file)
+    setImagePreview(URL.createObjectURL(file))
+  }
+
   const handleSend = async (e) => {
     e.preventDefault()
-    if (!text.trim() || sending || !user) return
+    const hasText = text.trim()
+    const hasImage = Boolean(imageFile)
+    if ((!hasText && !hasImage) || sending || !user) return
 
     setSending(true)
     try {
+      let imageUrl = null
+      if (imageFile) {
+        const uploaded = await uploadImage(imageFile, modelId || user.uid, 'chat')
+        imageUrl = uploaded.url
+      }
+
       await sendMessage({
         text,
+        imageUrl,
         senderUid: user.uid,
         senderName: user.displayName || user.email,
         senderRole: role,
@@ -108,6 +144,7 @@ export default function Chat() {
         senderEmail: user.email || null,
       })
       setText('')
+      clearImage()
       textareaRef.current?.focus()
     } catch (err) {
       toast.error(err.message || 'შეტყობინების გაგზავნა ვერ მოხერხდა')
@@ -365,7 +402,9 @@ export default function Chat() {
 
                               <div className={`group relative ${isOwn ? 'flex flex-row-reverse items-start gap-1' : ''}`}>
                                 <div
-                                  className="px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap break-words rounded-2xl"
+                                  className={`px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap break-words rounded-2xl ${
+                                    msg.imageUrl ? 'chat-message-bubble--media' : ''
+                                  }`}
                                   style={
                                     isOwn
                                       ? {
@@ -381,7 +420,24 @@ export default function Chat() {
                                         }
                                   }
                                 >
-                                  {msg.text}
+                                  {msg.imageUrl && (
+                                    <a
+                                      href={msg.imageUrl}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="chat-message-image-link"
+                                    >
+                                      <img
+                                        src={msg.imageUrl}
+                                        alt=""
+                                        className="chat-message-image"
+                                        loading="lazy"
+                                      />
+                                    </a>
+                                  )}
+                                  {msg.text?.trim() ? (
+                                    <span className={msg.imageUrl ? 'chat-message-text' : undefined}>{msg.text}</span>
+                                  ) : null}
                                 </div>
                                 {isOwn && (
                                   <button
@@ -411,6 +467,19 @@ export default function Chat() {
                 className="px-4 sm:px-5 py-4 border-t glass-morphism-strong"
                 style={{ borderColor: 'var(--border-subtle)' }}
               >
+                {imagePreview && (
+                  <div className="chat-compose-preview mb-3">
+                    <img src={imagePreview} alt="" className="chat-compose-preview-img" />
+                    <button
+                      type="button"
+                      onClick={clearImage}
+                      className="chat-compose-preview-remove"
+                      aria-label="ფოტოს წაშლა"
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                )}
                 <div
                   className="flex items-end gap-2 p-2 rounded-2xl glass"
                 >
@@ -424,20 +493,38 @@ export default function Chat() {
                     rows={1}
                     className="flex-1 resize-none bg-transparent px-2 py-2.5 text-sm focus:outline-none min-h-[44px] max-h-28"
                     style={{ color: 'var(--text-primary)' }}
+                    disabled={sending}
                   />
+                  <input
+                    ref={imageInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleImageSelect}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => imageInputRef.current?.click()}
+                    disabled={sending}
+                    className="chat-input-icon-btn"
+                    title="ფოტოს ატვირთვა"
+                    aria-label="ფოტოს ატვირთვა"
+                  >
+                    <ImagePlus size={20} />
+                  </button>
                   <EmojiPicker onEmojiSelect={(emoji) => setText(text + emoji)} />
                   <AnimatePresence mode="wait">
                     <motion.button
-                      key={text.trim() ? 'active' : 'idle'}
+                      key={text.trim() || imageFile ? 'active' : 'idle'}
                       type="submit"
-                      disabled={!text.trim() || sending}
+                      disabled={(!text.trim() && !imageFile) || sending}
                       initial={{ scale: 0.85, opacity: 0.5 }}
-                      animate={{ scale: 1, opacity: text.trim() ? 1 : 0.45 }}
+                      animate={{ scale: 1, opacity: text.trim() || imageFile ? 1 : 0.45 }}
                       whileTap={{ scale: 0.92 }}
                       className="shrink-0 w-11 h-11 rounded-xl flex items-center justify-center mb-0.5 mr-0.5 transition-all disabled:cursor-not-allowed"
                       style={{ background: 'var(--accent)', color: '#fff' }}
                     >
-                      <Send size={17} />
+                      {sending ? <Loader2 size={17} className="animate-spin" /> : <Send size={17} />}
                     </motion.button>
                   </AnimatePresence>
                 </div>

@@ -27,9 +27,31 @@ function publicUrl(path) {
   return data.publicUrl
 }
 
+const ALLOWED_IMAGE_EXT = new Set(['jpg', 'jpeg', 'png', 'gif', 'webp', 'heic', 'heif', 'avif'])
+
+/** Supabase object keys must be ASCII — strip Georgian/special chars from filenames */
+function safeStorageFileName(file, id) {
+  const fromType = file.type?.split('/')[1]?.split('+')[0]?.toLowerCase()
+  let ext = (file.name.split('.').pop() || fromType || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '')
+  if (ext === 'jpeg') ext = 'jpg'
+  if (!ALLOWED_IMAGE_EXT.has(ext)) ext = fromType && ALLOWED_IMAGE_EXT.has(fromType) ? fromType : 'jpg'
+  return `${id}.${ext}`
+}
+
+function safePathSegment(segment) {
+  return String(segment || 'unknown')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]/g, '')
+    .slice(0, 64) || 'unknown'
+}
+
 export async function uploadImage(file, modelId, type = 'uploaded', onProgress) {
   const id = `${Date.now()}_${Math.random().toString(36).slice(2, 9)}`
-  const path = `models/${modelId}/${type}/${id}_${file.name}`
+  const safeModelId = safePathSegment(modelId)
+  const safeType = safePathSegment(type)
+  const fileName = safeStorageFileName(file, id)
+  const path = `models/${safeModelId}/${safeType}/${fileName}`
 
   if (!isConfigured || !supabase) {
     const url = await fileToDataUrl(file)

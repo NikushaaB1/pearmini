@@ -63,14 +63,16 @@ create index if not exists activity_log_created_at_idx on public.activity_log (c
 -- Chat messages
 create table if not exists public.chat_messages (
   id uuid primary key default gen_random_uuid(),
-  text text not null check (char_length(text) between 1 and 2000),
+  text text not null default '' check (char_length(text) <= 2000),
+  image_url text,
   sender_uid uuid not null references auth.users(id) on delete cascade,
   sender_name text not null,
   sender_role text not null check (sender_role in ('model', 'admin', 'head_admin')),
   sender_avatar text,
   sender_model_id text,
   sender_email text,
-  created_at timestamptz not null default now()
+  created_at timestamptz not null default now(),
+  constraint chat_messages_content_check check (char_length(trim(text)) >= 1 or image_url is not null)
 );
 
 create index if not exists chat_messages_created_at_idx on public.chat_messages (created_at);
