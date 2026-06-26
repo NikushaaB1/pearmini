@@ -3,7 +3,7 @@
  * საიტის ჩართვისას: VITE_SITE_MAINTENANCE=false (.env ან hosting env)
  */
 export const siteMaintenance = {
-  enabled: import.meta.env.VITE_SITE_MAINTENANCE !== 'false',
+  enabled: false,
 
   title: 'საიტი წაშლილია !!!!',
   subtitle: 'გაფრთხილება',

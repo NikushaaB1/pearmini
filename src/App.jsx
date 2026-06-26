@@ -22,8 +22,6 @@ import { subscribeToChallenges } from './services/challengesService'
 import { subscribeToDailyTasks, subscribeToDailyTaskCompletions, subscribeToDailyTaskPenalties } from './services/dailyTasksService'
 import { subscribeToFeedPosts } from './services/feedPostsService'
 import { subscribeToBillboard } from './services/rewardsService'
-import { siteMaintenance } from './config/siteMaintenance'
-import MaintenanceScreen from './components/ui/MaintenanceScreen'
 
 export default function App() {
   const [authLoading, setAuthLoading] = useState(true)
@@ -168,14 +166,6 @@ export default function App() {
 
   if (authLoading) {
     return <Loader fullScreen text="იტვირთება..." />
-  }
-
-  if (siteMaintenance.enabled) {
-    return (
-      <ErrorBoundary>
-        <MaintenanceScreen />
-      </ErrorBoundary>
-    )
   }
 
   return (
